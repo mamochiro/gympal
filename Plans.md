@@ -11,23 +11,43 @@ _harness_version: "4.3.3"
 
 ---
 
-## 🔴 進行中のタスク
+## 🔴 In Progress
 
 (none)
 
 ---
 
-## 🟡 未着手のタスク
+## 🟡 Not Started
 
-(none for Phase 15)
+### Phase 16 — Tech Debt Sweep (target: this week, 2026-05-21 → 2026-05-28)
+
+Refactor-focused. **No new product behavior.** Goals: reduce duplication, shrink large files, raise test coverage on hot paths. Each task is a self-contained PR-sized unit.
+
+| Task | Description | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 16.1 | Extract `requireUser(request)` helper in `apps/web/src/lib/auth-helpers.ts` — returns `{ session, user }` or throws/returns 401 NextResponse. Returns the app's `users` row (with `betterAuthId` joined) so callers skip the second lookup. [tdd:required] | New helper exported; unit tests cover 401 (no session), 404 (no user row), happy path; tsc + vitest green | - | cc:完了 [a7839ce] |
+| 16.2 | Refactor 29 API routes (`apps/web/src/app/api/**/route.ts`) to call `requireUser` instead of inline `getSession` + `users.findFirst`. Pure mechanical sweep; no behavior change. [tdd:skip:covered-by-existing-unauth-tests] | All 29 routes use `requireUser`; existing `unauth.test.ts` (9 tests) still passes; biome + tsc green | 16.1 | cc:TODO |
+| 16.3 | Extract shared Valibot schemas to `packages/shared/src/schemas/` — `paginationSchema`, `idParamSchema`, `weightSchema`, `repsSchema`, plus per-domain shapes used in ≥2 routes. [tdd:required] | New `@saifit/shared/schemas` export; ≥5 schemas with unit tests; consumers in `apps/web/src/app/api/` updated; tsc green | - | cc:TODO |
+| 16.4 | Split `workout-logger-view.tsx` (945 LOC) into sub-components: `<KeyboardDock>`, `<SetList>`, `<WorkoutHeader>`, `<EmptyState>`. Top-level file ≤300 LOC. [tdd:skip:no-ui-test-fw-yet] | Top-level file ≤300 LOC; no behavior change; biome + tsc green; manual smoke test (start workout → log set → see PR) | - | cc:TODO |
+| 16.5 | Split `settings/page.tsx` (1024 LOC) into section components: `<ProfileSection>`, `<UnitsSection>`, `<RemindersSection>`, `<ConnectedAccountsSection>`, `<DataExportSection>`. [tdd:skip:no-ui-test-fw-yet] | Top-level file ≤250 LOC; each section is its own file in `apps/web/src/app/settings/components/`; biome + tsc green | - | cc:TODO |
+| 16.6 | Consolidate `@saifit/db` query layer: merge `queries.ts` into domain-split files (`queries/user.ts`, `queries/workout.ts`, `queries/exercise.ts`). `helpers.ts` keeps cron/aggregate helpers only. [tdd:required for new files] | Each domain file ≤150 LOC; barrel export from `@saifit/db`; existing callers in web + line-bot unchanged; tsc green; vitest green | - | cc:TODO |
+| 16.7 | Reduce `apps/web/src/app/api/docs/route.ts` (1809 LOC). Move inline OpenAPI spec to `apps/web/src/lib/openapi-spec.ts`; route.ts just imports + serves. [tdd:skip:docs-only-no-behavior-change] | `route.ts` ≤100 LOC; `openapi-spec.ts` is the single source of truth; `/api/docs` still serves valid OpenAPI 3.x JSON; biome + tsc green | - | cc:TODO |
+| 16.8 | Add tests for hot paths: `getLastWorkoutSetsForExercise` (db queries), `estimate1RM` edge cases (already 17 tests — verify gaps), guided-workout state transitions if reducer-shaped. [tdd:required] | ≥10 new test cases across packages; vitest green; coverage report shows uplift on changed files | 16.1, 16.6 | cc:TODO |
+
+#### Non-goals for Phase 16
+
+- No new features (warm-up logic, last-sets, guided view are already shipped in Phase 15)
+- No design changes (`globals.css` / Tailwind tokens stay frozen)
+- No DB schema migrations (no new tables/columns)
+- No dependency upgrades
 
 ---
 
-## 🟢 完了タスク
+## 🟢 Completed
 
 ### Phase 15 — Guided Workout v2 + Warm-up Sets (2026-05-20)
 
-| Task | 内容 | DoD | Depends | Status |
+| Task | Description | DoD | Depends | Status |
 |------|------|-----|---------|--------|
 | 15.1 | DB schema: `workout_sets.is_warmup` (migration `0007_friendly_lester.sql`) | Migration applies, journal updated, tsc green | - | cc:完了 [f644a8f] |
 | 15.2 | `packages/db/src/queries.ts` — `getLastWorkoutSetsForExercise` | Exported from `@saifit/db`, tsc green | 15.1 | cc:完了 [f644a8f] |
@@ -59,13 +79,18 @@ _harness_version: "4.3.3"
 
 ---
 
-## 📦 アーカイブ
+## 📦 Archive
 
 <!-- Move older completed tasks here. -->
 
 ---
 
 ## Status Marker Legend
+
+> The marker tokens below (`cc:完了`, `pm:依頼中`, `pm:確認済`) are **protocol
+> values** searched by the compiled `harness` Go binary. They look Japanese but
+> function as opaque identifiers — like Git's `HEAD` or `refs/heads`. Do not
+> translate the tokens themselves; only the descriptions are localized.
 
 | Marker | Meaning |
 |--------|---------|

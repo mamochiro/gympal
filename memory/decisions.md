@@ -5,43 +5,44 @@ _harness_version: "2.5.27"
 
 # Decisions (SSOT)
 
-このファイルは「重要な意思決定」の単一の正（Single Source of Truth; SSOT）です。
-議論ログは残しすぎず、**結論と理由、トレードオフ**を短く確実に残します。
+This file is the Single Source of Truth for **important decisions**.
+Don't keep the full debate — record the **conclusion, reasoning, and
+trade-offs** briefly and reliably.
 
 ## Index
 
-- （例）{{DATE}}: 認証はSupabase Authを採用 #auth #saas
+- (example) {{DATE}}: Use Supabase Auth #auth #saas
 
 ---
 
-## {{DATE}}: （決定タイトルを1行で） #decision #tag1 #tag2
+## {{DATE}}: (One-line decision title) #decision #tag1 #tag2
 
-### 結論
+### Conclusion
 
-- （何を決めたか。1〜3行）
+- (What was decided, 1–3 lines)
 
-### 背景
+### Background
 
-- （なぜ今決める必要があったか）
+- (Why this needed deciding now)
 
-### 選択肢
+### Options
 
-- A: （案）
-- B: （案）
+- A: (option)
+- B: (option)
 
-### 採用理由
+### Reasoning
 
-- （採用した決め手。3点以内推奨）
+- (Decisive factors; aim for ≤3 bullets)
 
-### 影響 / トレードオフ
+### Impact / trade-offs
 
-- （運用・コスト・将来の変更難易度など）
+- (Ops cost, dollar cost, future change difficulty, etc.)
 
-### 見直し条件
+### Revisit when
 
-- （どんな条件なら再検討するか。SLO/規模/要件変更など）
+- (Conditions that would justify reopening — SLO breach, scale, requirement change, etc.)
 
-### 関連
+### Related
 
-- PR/Issue:
-- 参考リンク:
+- PR / Issue:
+- references:

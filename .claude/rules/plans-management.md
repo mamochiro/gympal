@@ -1,5 +1,5 @@
 ---
-description: Plans.md タスク管理ルール（Plans.md 編集時のみ適用）
+description: Plans.md task management rules (applied only when editing Plans.md)
 paths:
   - "**/Plans.md"
 _harness_template: "rules/plans-management.md.template"
@@ -8,71 +8,75 @@ _harness_version: "2.5.27"
 
 # Plans.md Management Rules
 
-## タスク記述フォーマット
+## Task entry format
 
 ```markdown
-- [ ] タスク説明 `マーカー`
-  - サブタスク1
-  - サブタスク2
+- [ ] Task description `marker`
+  - Subtask 1
+  - Subtask 2
 ```
 
-## マーカー運用
+## Marker usage
 
-| マーカー | 付与者 | 意味 |
-|---------|--------|------|
-| `pm:依頼中` | PM（Cursor/PM Claude） | タスクを依頼 |
-| `cc:TODO` | Claude Code | 未着手 |
-| `cc:WIP` | Claude Code | 作業中 |
-| `cc:完了` | Claude Code | 完了 |
-| `pm:確認済` | PM（Cursor/PM Claude） | レビュー完了 |
-| `cursor:依頼中` | Cursor | （互換）`pm:依頼中` と同義 |
-| `cursor:確認済` | Cursor | （互換）`pm:確認済` と同義 |
+| Marker | Set by | Meaning |
+|--------|--------|---------|
+| `pm:依頼中` | PM (Cursor / PM Claude) | Requested |
+| `cc:TODO` | Claude Code | Not started |
+| `cc:WIP` | Claude Code | In progress |
+| `cc:完了` | Claude Code | Completed |
+| `pm:確認済` | PM (Cursor / PM Claude) | Review complete |
+| `cursor:依頼中` | Cursor | (compat) same as `pm:依頼中` |
+| `cursor:確認済` | Cursor | (compat) same as `pm:確認済` |
 
-## セクション構成
+> The Japanese-looking markers above are **protocol identifiers** searched by
+> the compiled `harness` Go binary — treat them as opaque tokens, like Git's
+> `HEAD`. Do not translate them.
+
+## Section layout
 
 ```markdown
-## 🔴 進行中のタスク
-（cc:WIP のタスク）
+## 🔴 In Progress
+(tasks with cc:WIP)
 
-## 🟡 未着手のタスク
-（cc:TODO, pm:依頼中（互換: cursor:依頼中） のタスク）
+## 🟡 Not Started
+(tasks with cc:TODO or pm:依頼中 / cursor:依頼中)
 
-## 🟢 完了タスク
-（cc:完了, pm:確認済（互換: cursor:確認済） のタスク）
+## 🟢 Completed
+(tasks with cc:完了 or pm:確認済 / cursor:確認済)
 
-## 📦 アーカイブ
-（古い完了タスク）
+## 📦 Archive
+(older completed tasks)
 ```
 
-## 更新ルール
+## Update rules
 
-1. **即時更新**: タスク開始時に `cc:WIP`、完了時に `cc:完了` を即座に付与
-2. **サマリー記載**: 完了時は作業内容のサマリーを追記
-3. **日付記録**: 完了セクションには日付を記載 `(YYYY-MM-DD)`
-4. **アーカイブ**: 7日以上前の完了タスクは📦アーカイブへ移動
+1. **Update immediately**: set `cc:WIP` when starting a task, `cc:完了` the moment it finishes.
+2. **Add a summary**: when finishing, append a short summary of what was done.
+3. **Record the date**: completed entries get a `(YYYY-MM-DD)` date.
+4. **Archive**: completed tasks older than 7 days move to the 📦 Archive section.
 
-## 禁止事項
+## Prohibited
 
-- ❌ 他者のマーカーを勝手に変更
-- ❌ 進行中タスクの削除
-- ❌ サマリーなしでの完了マーク
+- ❌ Changing markers written by another agent without coordination
+- ❌ Deleting in-progress tasks
+- ❌ Marking a task complete without a summary
 
 ---
 
-## 拡張記法（オプション）
+## Extended syntax (optional)
 
-大規模プロジェクトでは以下の記法を**オプション**で使用可能：
+For larger plans, the following syntax is **optional**:
 
 ```markdown
-- [ ] T001: 認証機能 `cc:TODO`
-- [ ] T002: ユーザーAPI `cc:TODO` depends:T001
-- [ ] T003: 商品API `cc:TODO` [P]
+- [ ] T001: Auth `cc:TODO`
+- [ ] T002: User API `cc:TODO` depends:T001
+- [ ] T003: Product API `cc:TODO` [P]
 ```
 
-| 記法 | 意味 |
-|------|------|
-| `T001:` | タスクID（依存指定用） |
-| `depends:ID` | 依存タスク（カンマ区切り可） |
-| `[P]` | 並列実行可（Parallelizable） |
+| Syntax | Meaning |
+|--------|---------|
+| `T001:` | Task ID (used for dependencies) |
+| `depends:ID` | Dependency task (comma-separated for multiple) |
+| `[P]` | Parallelizable |
 
-**後方互換**: これらがなくても従来通り動作する。
+**Backward compatible**: plans without this syntax continue to work as before.
