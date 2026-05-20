@@ -1,8 +1,17 @@
 import { Avatar } from "@/components/avatar";
 import { BodyFrontIcon } from "@/components/icons";
 import { auth } from "@/lib/auth";
-import { getDb, routines, streaks, templates, userPrograms, users, workouts } from "@saifit/db";
-import { and, count, desc, eq, gte, isNotNull, isNull } from "drizzle-orm";
+import {
+  exercises,
+  getDb,
+  routines,
+  streaks,
+  templates,
+  userPrograms,
+  users,
+  workouts,
+} from "@saifit/db";
+import { and, count, desc, eq, gte, inArray, isNotNull, isNull } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -143,6 +152,19 @@ export default async function HomePage() {
     todayDay = splitJson.days[dayIndex] ?? null;
   }
 
+  // Resolve exercise slugs → Thai names for today's plan
+  const exerciseNameMap: Record<string, string> = {};
+  if (todayDay && todayDay.exercises.length > 0) {
+    const slugs = todayDay.exercises.map((e) => e.exerciseSlug);
+    const rows = await db
+      .select({ slug: exercises.slug, nameTh: exercises.nameTh, nameEn: exercises.nameEn })
+      .from(exercises)
+      .where(inArray(exercises.slug, slugs));
+    for (const row of rows) {
+      exerciseNameMap[row.slug] = row.nameTh || row.nameEn;
+    }
+  }
+
   return (
     <div className="saifit-bg" style={{ minHeight: "100vh", paddingBottom: 110 }}>
       {/* Body watermark */}
@@ -186,8 +208,8 @@ export default async function HomePage() {
               href="/settings"
               aria-label="ตั้งค่า"
               style={{
-                width: 38,
-                height: 38,
+                width: 44,
+                height: 44,
                 borderRadius: "50%",
                 background: "rgba(255,255,255,0.06)",
                 border: "1px solid var(--glass-line)",
@@ -280,7 +302,7 @@ export default async function HomePage() {
                     margin: "2px 0 0",
                   }}
                 >
-                  กำลังออกกำลังกายอยู่ — แตะเพื่อกลับ
+                  {t("home.inProgress")}
                 </p>
               </div>
               <svg
@@ -313,7 +335,7 @@ export default async function HomePage() {
           }}
         >
           <div style={{ flex: 1 }}>
-            <span className="t-label">สัปดาห์นี้</span>
+            <span className="t-label">{t("home.thisWeek")}</span>
             <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 3 }}>
               <span className="t-num" style={{ fontSize: 28, color: "var(--ink)" }}>
                 {weeklyCount}
@@ -321,7 +343,7 @@ export default async function HomePage() {
               <span
                 style={{ fontFamily: "K2D, sans-serif", fontSize: 13, color: "var(--ink-mute)" }}
               >
-                / {weeklyGoal} วัน
+                {t("home.daysGoal", { n: weeklyGoal })}
               </span>
             </div>
           </div>
@@ -383,7 +405,7 @@ export default async function HomePage() {
                   marginBottom: 8,
                 }}
               >
-                วันติดต่อกัน
+                {t("home.streak")}
               </span>
             </div>
 
@@ -571,10 +593,9 @@ export default async function HomePage() {
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
-                          textTransform: "capitalize",
                         }}
                       >
-                        {ex.exerciseSlug.replace(/-/g, " ")}
+                        {exerciseNameMap[ex.exerciseSlug] ?? ex.exerciseSlug.replace(/-/g, " ")}
                       </p>
                       {ex.notes && (
                         <p
@@ -603,22 +624,24 @@ export default async function HomePage() {
               </div>
             )}
 
-            <Link
-              href="/workout"
-              className="btn-primary"
-              style={{ width: "100%", display: "flex" }}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width={18}
-                height={18}
-                fill="currentColor"
-                aria-hidden="true"
+            {!inProgressWorkout && (
+              <Link
+                href="/workout"
+                className="btn-primary"
+                style={{ width: "100%", display: "flex" }}
               >
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              {t("home.startWorkout")}
-            </Link>
+                <svg
+                  viewBox="0 0 24 24"
+                  width={18}
+                  height={18}
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                {t("home.startWorkout")}
+              </Link>
+            )}
           </div>
         ) : (
           <div style={{ padding: "64px 0", textAlign: "center" }}>
@@ -641,7 +664,7 @@ export default async function HomePage() {
                 lineHeight: 1.5,
               }}
             >
-              เลือกโปรแกรมเพื่อเริ่มต้นออกกำลังกาย
+              {t("home.noProgramHint")}
             </p>
             <Link
               href="/templates"

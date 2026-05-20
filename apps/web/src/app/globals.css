@@ -61,6 +61,7 @@ body {
   --glass-2: rgba(255, 255, 255, 0.09);
   --glass-line: rgba(255, 255, 255, 0.1);
   --glass-line-2: rgba(255, 255, 255, 0.16);
+  --glass-bg: oklch(9% 0.008 245 / 0.94);
 
   /* ink */
   --ink: oklch(95% 0.003 90);

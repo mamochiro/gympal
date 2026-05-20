@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getDb, templates, userPrograms, users } from "@saifit/db";
 import { eq } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { StartProgramButton } from "./StartProgramButton";
@@ -19,25 +20,13 @@ interface SplitJson {
   days: SplitDay[];
 }
 
-const GOAL_LABELS: Record<string, string> = {
-  build_muscle: "สร้างกล้าม",
-  lose_fat: "ลดไขมัน",
-  get_stronger: "แข็งแรง",
-  stay_active: "กระฉับกระเฉง",
-};
-
-const DIFFICULTY_LABELS: Record<string, string> = {
-  beginner: "มือใหม่",
-  intermediate: "ระดับกลาง",
-  advanced: "ขั้นสูง",
-};
-
 export default async function TemplateDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("templates");
   const db = getDb();
 
   const template = await db.query.templates.findFirst({
@@ -69,9 +58,11 @@ export default async function TemplateDetailPage({
       <div className="px-4 pt-10 pb-6 border-b border-border">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xs border border-border rounded-full px-2.5 py-0.5 text-muted-foreground">
-            {DIFFICULTY_LABELS[template.difficulty]}
+            {t(`difficultyLabels.${template.difficulty}` as Parameters<typeof t>[0])}
           </span>
-          <span className="text-xs text-muted-foreground">{GOAL_LABELS[template.goal]}</span>
+          <span className="text-xs text-muted-foreground">
+            {t(`goals.${template.goal}` as Parameters<typeof t>[0])}
+          </span>
         </div>
         <h1 className="text-2xl font-bold leading-[1.7]">{template.nameTh}</h1>
         <p className="text-sm text-muted-foreground mt-1">{template.nameEn}</p>
@@ -81,11 +72,11 @@ export default async function TemplateDetailPage({
             <span className="font-display tabular-nums text-lg font-semibold">
               {template.daysPerWeek}
             </span>
-            <span className="text-muted-foreground ml-1">วัน/สัปดาห์</span>
+            <span className="text-muted-foreground ml-1">{t("daysPerWeekUnit")}</span>
           </div>
           <div>
             <span className="tabular-nums text-lg font-semibold">{splitJson.days.length}</span>
-            <span className="text-muted-foreground ml-1">วันฝึก</span>
+            <span className="text-muted-foreground ml-1">{t("trainingDays")}</span>
           </div>
         </div>
 
