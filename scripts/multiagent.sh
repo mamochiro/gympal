@@ -65,7 +65,7 @@ agent_status() {
 set -e
 
 SESSION="gympal-agents"
-ROOT="$HOME/github/gympal"
+ROOT="$HOME/github/saifit"
 PROFILES="$HOME/.claude/profiles"
 
 # ── Validate args ─────────────────────────────────────────────────────────────
