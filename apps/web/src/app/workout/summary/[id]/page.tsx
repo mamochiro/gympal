@@ -10,6 +10,7 @@ interface WorkoutSet {
   reps: number;
   weightKg: string | null;
   exerciseId: string;
+  exercise: { nameTh: string; nameEn: string } | null;
 }
 
 interface WorkoutData {
@@ -41,13 +42,35 @@ function uniqueExercises(sets: WorkoutSet[]): number {
   return new Set(sets.map((s) => s.exerciseId)).size;
 }
 
+function groupByExercise(sets: WorkoutSet[]) {
+  const order: string[] = [];
+  const map = new Map<string, { name: string; sets: WorkoutSet[] }>();
+  for (const s of sets) {
+    if (!map.has(s.exerciseId)) {
+      order.push(s.exerciseId);
+      map.set(s.exerciseId, {
+        name: s.exercise?.nameTh || s.exercise?.nameEn || "—",
+        sets: [],
+      });
+    }
+    map.get(s.exerciseId)?.sets.push(s);
+  }
+  return order.flatMap((id) => {
+    const entry = map.get(id);
+    return entry ? [entry] : [];
+  });
+}
+
 export default function WorkoutSummaryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const t = useTranslations("workout");
 
   const { data: workout, isLoading: workoutLoading } = useQuery<WorkoutData>({
     queryKey: ["workout", id],
-    queryFn: () => fetch(`/api/workouts/${id}`).then((r) => r.json()).then((d) => d.data),
+    queryFn: () =>
+      fetch(`/api/workouts/${id}`)
+        .then((r) => r.json())
+        .then((d) => d.data),
     staleTime: 60_000,
   });
 
@@ -95,6 +118,7 @@ export default function WorkoutSummaryPage({ params }: { params: Promise<{ id: s
   const displayName = me?.displayName ?? "สาย";
   const firstName = displayName.split(" ")[0] ?? displayName;
 
+  const exerciseGroups = groupByExercise(workout.sets);
   const shareText = `ฉันเพิ่งออกกำลังกายเสร็จแล้ว! ${workout.name} · ${setCount} เซ็ต · ${volume.toLocaleString()} kg\nติดตามสุขภาพด้วย Saifit`;
   const lineShareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(shareText)}`;
 
@@ -230,6 +254,60 @@ export default function WorkoutSummaryPage({ params }: { params: Promise<{ id: s
           </div>
         ))}
       </div>
+
+      {/* Exercise breakdown */}
+      {exerciseGroups.length > 0 && (
+        <div style={{ position: "relative", padding: "20px 20px 0" }}>
+          <span
+            className="t-label"
+            style={{ display: "block", marginBottom: 10, letterSpacing: "0.14em" }}
+          >
+            สรุปการออกกำลังกาย
+          </span>
+          <div className="glass" style={{ padding: "4px 0" }}>
+            {exerciseGroups.map((group, gi) => (
+              <div
+                key={group.name}
+                style={{
+                  padding: "12px 18px",
+                  borderBottom:
+                    gi < exerciseGroups.length - 1 ? "1px solid var(--glass-line)" : "none",
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: "K2D, sans-serif",
+                    fontWeight: 600,
+                    fontSize: 14,
+                    color: "var(--ink)",
+                    margin: "0 0 6px",
+                  }}
+                >
+                  {group.name}
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {group.sets.map((s, si) => (
+                    <span
+                      key={s.id}
+                      className="t-num"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--ink-mute)",
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid var(--glass-line)",
+                        borderRadius: 8,
+                        padding: "3px 9px",
+                      }}
+                    >
+                      {si + 1}. {s.weightKg ? `${s.weightKg}×${s.reps}` : `${s.reps} ครั้ง`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* CTAs */}
       <div

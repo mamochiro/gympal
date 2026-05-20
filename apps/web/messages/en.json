@@ -25,9 +25,13 @@
     "greeting": "Hello",
     "todayWorkout": "Today's workout",
     "noProgram": "No program yet",
+    "noProgramHint": "Choose a program to get started",
     "browseTemplates": "Browse templates",
     "startWorkout": "Start workout",
-    "streak": "day streak"
+    "streak": "day streak",
+    "thisWeek": "This week",
+    "daysGoal": "/ {n} days",
+    "inProgress": "Workout in progress — tap to return"
   },
   "workout": {
     "logSet": "Log set",
@@ -50,7 +54,12 @@
     "resume": "Continue",
     "discard": "Start fresh",
     "undoAdvance": "Undo",
+    "confirmDelete": "Delete set",
+    "swapExercise": "Swap exercise",
+    "lastSession": "Last session",
+    "warmupSet": "Warm-up",
     "offlineCannotComplete": "Offline — reconnect to finish",
+    "exitWorkout": "Exit workout",
     "summaryKicker": "WORKOUT COMPLETE · เสร็จแล้ว",
     "summaryTitle": "Great work, {name}",
     "summaryShareLine": "Share to LINE",
@@ -132,6 +141,8 @@
     "browse": "Browse templates",
     "startProgram": "Start this program",
     "daysPerWeek": "Days per week",
+    "daysPerWeekUnit": "days/wk",
+    "trainingDays": "training days",
     "difficulty": "Difficulty",
     "title": "Training Programs",
     "filter": {
@@ -141,7 +152,18 @@
       "days": "Days/week"
     },
     "empty": "No programs match your filters",
-    "currentlyActive": "Currently active program"
+    "currentlyActive": "Currently active program",
+    "goals": {
+      "build_muscle": "Build muscle",
+      "lose_fat": "Lose fat",
+      "get_stronger": "Get stronger",
+      "stay_active": "Stay active"
+    },
+    "difficultyLabels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    }
   },
   "programs": {
     "started": "Program started",

@@ -9,10 +9,30 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export function RestTimer({ workoutId: _workoutId }: { workoutId: string }) {
   const t = useTranslations("restTimer");
-  const { duration, cancel, addSeconds, getRemaining, nextWeight, nextReps, nextSetNumber } =
-    useRestTimerStore();
+  const {
+    duration,
+    preferredRestDuration,
+    cancel,
+    addSeconds,
+    getRemaining,
+    nextWeight,
+    nextReps,
+    nextSetNumber,
+  } = useRestTimerStore();
   const [remaining, setRemaining] = useState(getRemaining());
+  const [savedFlash, setSavedFlash] = useState(false);
   const hapticFiredRef = useRef(false);
+  const prevPreferredRef = useRef(preferredRestDuration);
+
+  useEffect(() => {
+    if (prevPreferredRef.current !== preferredRestDuration) {
+      prevPreferredRef.current = preferredRestDuration;
+      setSavedFlash(true);
+      const id = setTimeout(() => setSavedFlash(false), 1500);
+      return () => clearTimeout(id);
+    }
+    return undefined;
+  }, [preferredRestDuration]);
 
   useEffect(() => {
     hapticFiredRef.current = false;
@@ -128,12 +148,13 @@ export function RestTimer({ workoutId: _workoutId }: { workoutId: string }) {
               style={{
                 fontFamily: "system-ui, sans-serif",
                 fontSize: 10,
-                letterSpacing: "0.18em",
-                color: "var(--ink-soft)",
+                letterSpacing: "0.15em",
+                color: savedFlash ? "var(--violet-bright)" : "var(--ink-soft)",
                 fontWeight: 600,
+                transition: "color 0.3s",
               }}
             >
-              {targetStr} TARGET
+              {savedFlash ? "บันทึกแล้ว ✓" : `${targetStr} · ค่าเริ่มต้น`}
             </span>
           )}
         </div>

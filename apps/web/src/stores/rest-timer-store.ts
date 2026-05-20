@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 interface RestTimerState {
   isActive: boolean;
   duration: number;
+  preferredRestDuration: number;
   startedAt: number | null;
   pausedAt: number | null;
   elapsed: number;
@@ -17,7 +18,7 @@ interface RestTimerState {
 
 interface RestTimerActions {
   start: (opts: {
-    duration: number;
+    duration?: number;
     workoutId: string;
     exerciseName: string;
     setNumber: number;
@@ -29,14 +30,16 @@ interface RestTimerActions {
   resume: () => void;
   cancel: () => void;
   addSeconds: (delta: number) => void;
+  setPreferredRestDuration: (sec: number) => void;
   getRemaining: () => number;
 }
 
-const DEFAULT_REST = 90; // seconds
+const DEFAULT_REST = 90;
 
 const initialState: RestTimerState = {
   isActive: false,
   duration: DEFAULT_REST,
+  preferredRestDuration: DEFAULT_REST,
   startedAt: null,
   pausedAt: null,
   elapsed: 0,
@@ -61,10 +64,11 @@ export const useRestTimerStore = create<RestTimerState & RestTimerActions>()(
         nextWeight,
         nextReps,
         nextSetNumber,
-      }) =>
+      }) => {
+        const preferred = get().preferredRestDuration;
         set({
           isActive: true,
-          duration,
+          duration: duration ?? preferred,
           startedAt: Date.now(),
           pausedAt: null,
           elapsed: 0,
@@ -74,7 +78,8 @@ export const useRestTimerStore = create<RestTimerState & RestTimerActions>()(
           nextWeight: nextWeight ?? null,
           nextReps: nextReps ?? null,
           nextSetNumber: nextSetNumber ?? null,
-        }),
+        });
+      },
 
       pause: () => {
         const { startedAt, elapsed } = get();
@@ -87,11 +92,17 @@ export const useRestTimerStore = create<RestTimerState & RestTimerActions>()(
         set({ startedAt: Date.now(), pausedAt: null });
       },
 
-      cancel: () => set({ ...initialState }),
+      cancel: () => set({ ...initialState, preferredRestDuration: get().preferredRestDuration }),
 
       addSeconds: (delta: number) => {
         const { duration } = get();
-        set({ duration: Math.max(5, duration + delta) });
+        const next = Math.max(5, duration + delta);
+        set({ duration: next, preferredRestDuration: next });
+      },
+
+      setPreferredRestDuration: (sec: number) => {
+        const clamped = Math.max(5, Math.min(600, sec));
+        set({ preferredRestDuration: clamped });
       },
 
       getRemaining: () => {
@@ -106,8 +117,23 @@ export const useRestTimerStore = create<RestTimerState & RestTimerActions>()(
     {
       name: "saifit-rest-timer",
       storage: createJSONStorage(() =>
-        typeof window !== "undefined" ? sessionStorage : localStorage,
+        typeof window !== "undefined" ? localStorage : localStorage,
       ),
+      // Only persist the preference + active timer state — not transient UI
+      partialize: (state) => ({
+        preferredRestDuration: state.preferredRestDuration,
+        isActive: state.isActive,
+        duration: state.duration,
+        startedAt: state.startedAt,
+        pausedAt: state.pausedAt,
+        elapsed: state.elapsed,
+        workoutId: state.workoutId,
+        exerciseName: state.exerciseName,
+        setNumber: state.setNumber,
+        nextWeight: state.nextWeight,
+        nextReps: state.nextReps,
+        nextSetNumber: state.nextSetNumber,
+      }),
     },
   ),
 );

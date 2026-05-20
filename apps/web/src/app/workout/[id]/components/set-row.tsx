@@ -6,6 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useCallback, useRef, useState } from "react";
 
+const UNDO_MS = 8000;
+
 interface WorkoutSet {
   id: string;
   workoutId: string;
@@ -14,6 +16,7 @@ interface WorkoutSet {
   reps: number;
   weightKg: string | null;
   isBodyweight: boolean;
+  isWarmup: boolean;
   completedAt: string;
   exercise: { nameTh: string; nameEn: string } | null;
 }
@@ -22,12 +25,16 @@ export function SetRow({
   set,
   workoutId,
   status = "current",
+  prevWeight,
+  prevReps,
   onPR,
   onSetComplete,
 }: {
   set: WorkoutSet;
   workoutId: string;
   status?: "current" | "pending";
+  prevWeight?: string | null | undefined;
+  prevReps?: number | null | undefined;
   onPR: (exerciseName: string, value: number, type: string) => void;
   onSetComplete: (exerciseName: string, setNumber: number, weight: string, reps: string) => void;
 }) {
@@ -38,7 +45,10 @@ export function SetRow({
   const [reps, setReps] = useState(String(set.reps));
   const [completed, setCompleted] = useState(!!set.completedAt && set.reps > 0);
   const [undoVisible, setUndoVisible] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [warmup, setWarmup] = useState(set.isWarmup);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const saveSet = useCallback(
     async (w: string, r: string) => {
@@ -81,7 +91,7 @@ export function SetRow({
 
     setCompleted(true);
     setUndoVisible(true);
-    setTimeout(() => setUndoVisible(false), 3000);
+    setTimeout(() => setUndoVisible(false), UNDO_MS);
 
     try {
       const res = await fetch(`/api/workouts/${workoutId}/sets`, {
@@ -122,8 +132,58 @@ export function SetRow({
           completedAt: new Date().toISOString(),
         },
       });
+      const exerciseName = set.exercise?.nameTh ?? set.exercise?.nameEn ?? "";
+      onSetComplete(exerciseName, set.setNumber, weight, reps);
     }
   }, [reps, weight, set, workoutId, qc, onPR, onSetComplete]);
+
+  const handleDeleteRequest = useCallback(() => {
+    setDeleteConfirm(true);
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    deleteTimerRef.current = setTimeout(() => setDeleteConfirm(false), 4000);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    try {
+      await fetch(`/api/sets/${set.id}`, { method: "DELETE" });
+    } catch {
+      // Ignore network errors — server may be offline; set still removed optimistically
+    }
+    qc.setQueryData<{ sets: WorkoutSet[] }>(["workout", workoutId], (old) => {
+      if (!old) return old;
+      return { ...old, sets: old.sets.filter((s) => s.id !== set.id) };
+    });
+    qc.invalidateQueries({ queryKey: ["workout", workoutId] });
+  }, [set.id, workoutId, qc]);
+
+  const handleWarmupToggle = useCallback(async () => {
+    const next = !warmup;
+    setWarmup(next);
+    qc.setQueryData<{ sets: WorkoutSet[] }>(["workout", workoutId], (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        sets: old.sets.map((s) => (s.id === set.id ? { ...s, isWarmup: next } : s)),
+      };
+    });
+    try {
+      await fetch(`/api/sets/${set.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isWarmup: next }),
+      });
+    } catch {
+      // Revert on failure
+      setWarmup(!next);
+      qc.setQueryData<{ sets: WorkoutSet[] }>(["workout", workoutId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          sets: old.sets.map((s) => (s.id === set.id ? { ...s, isWarmup: !next } : s)),
+        };
+      });
+    }
+  }, [warmup, set.id, workoutId, qc]);
 
   // Completed row
   if (completed) {
@@ -135,9 +195,11 @@ export function SetRow({
           gap: 10,
           padding: "10px 14px",
           borderRadius: 14,
-          background: "rgba(140,100,255,0.08)",
-          border: "1px solid var(--violet-edge)",
+          background: deleteConfirm ? "rgba(220,60,40,0.08)" : "rgba(140,100,255,0.08)",
+          border: deleteConfirm ? "1px solid rgba(220,60,40,0.4)" : "1px solid var(--violet-edge)",
           minHeight: 52,
+          opacity: warmup ? 0.55 : 1,
+          transition: "background 0.2s, border-color 0.2s, opacity 0.2s",
         }}
       >
         <span
@@ -148,8 +210,39 @@ export function SetRow({
         </span>
         <span className="t-num" style={{ flex: 1, fontSize: 15, color: "var(--ink-mute)" }}>
           {weight || "—"} kg × {reps}
+          {warmup && (
+            <span
+              style={{
+                marginLeft: 6,
+                fontSize: 10,
+                color: "var(--ink-faint)",
+                fontFamily: "K2D, sans-serif",
+                letterSpacing: "0.06em",
+              }}
+            >
+              {t("warmupSet")}
+            </span>
+          )}
         </span>
-        {undoVisible && (
+        {deleteConfirm ? (
+          <button
+            type="button"
+            onClick={handleDeleteConfirm}
+            style={{
+              fontFamily: "K2D, sans-serif",
+              fontSize: 11,
+              color: "var(--danger)",
+              background: "rgba(220,60,40,0.12)",
+              border: "1px solid rgba(220,60,40,0.35)",
+              borderRadius: 8,
+              padding: "4px 10px",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            {t("confirmDelete")}
+          </button>
+        ) : undoVisible ? (
           <button
             type="button"
             onClick={() => {
@@ -170,7 +263,60 @@ export function SetRow({
           >
             {t("undoAdvance")}
           </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleDeleteRequest}
+            aria-label="ลบเซ็ต"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              color: "var(--ink-faint)",
+            }}
+          >
+            <svg width="13" height="14" viewBox="0 0 13 14" fill="none" aria-hidden="true">
+              <path
+                d="M1 3h11M4 3V2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1M5 6v5M8 6v5M2 3l.7 9a1 1 0 0 0 1 .93h5.6a1 1 0 0 0 1-.93L11 3"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
         )}
+        <button
+          type="button"
+          onClick={handleWarmupToggle}
+          aria-label={t("warmupSet")}
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 6,
+            background: warmup ? "rgba(255,200,80,0.18)" : "transparent",
+            border: warmup ? "1px solid rgba(255,200,80,0.4)" : "1px solid rgba(255,255,255,0.1)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            fontFamily: "Chakra Petch, monospace",
+            fontSize: 10,
+            fontWeight: 700,
+            color: warmup ? "rgba(255,200,80,0.9)" : "var(--ink-faint)",
+            transition: "background 0.15s, border-color 0.15s, color 0.15s",
+          }}
+        >
+          W
+        </button>
         <div
           style={{
             width: 32,
@@ -202,127 +348,174 @@ export function SetRow({
   return (
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "10px 14px",
         borderRadius: 14,
         background: isPending ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.05)",
-        border: isPending ? "1px solid rgba(255,255,255,0.06)" : "1px solid var(--glass-line)",
-        minHeight: 56,
-        opacity: isPending ? 0.6 : 1,
+        border: isPending
+          ? "1px solid rgba(255,255,255,0.06)"
+          : warmup
+            ? "1px solid rgba(255,200,80,0.25)"
+            : "1px solid var(--glass-line)",
+        opacity: isPending ? 0.6 : warmup ? 0.65 : 1,
+        transition: "border-color 0.15s, opacity 0.15s",
       }}
     >
+      {prevWeight && prevReps ? (
+        <div
+          style={{
+            padding: "5px 14px 0",
+            fontSize: 10,
+            color: "var(--ink-faint)",
+            fontFamily: "K2D, sans-serif",
+            letterSpacing: "0.04em",
+          }}
+        >
+          {t("previousValue", { weight: prevWeight, reps: prevReps })}
+        </div>
+      ) : null}
       <div
         style={{
-          width: 20,
-          height: 20,
-          borderRadius: "50%",
-          flexShrink: 0,
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          ...(isPending
-            ? { border: "1px dashed rgba(255,255,255,0.22)" }
-            : {
-                border: "2px solid var(--violet-bright)",
-                boxShadow: "0 0 8px var(--violet)",
-                background: "rgba(140,100,255,0.15)",
-              }),
+          gap: 10,
+          padding: "10px 14px",
+          minHeight: 56,
         }}
       >
-        {!isPending && (
-          <span
-            className="t-num"
-            style={{ fontSize: 11, color: "var(--violet-bright)", lineHeight: 1 }}
-          >
-            {set.setNumber}
-          </span>
-        )}
+        <div
+          style={{
+            width: 20,
+            height: 20,
+            borderRadius: "50%",
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            ...(isPending
+              ? { border: "1px dashed rgba(255,255,255,0.22)" }
+              : {
+                  border: "2px solid var(--violet-bright)",
+                  boxShadow: "0 0 8px var(--violet)",
+                  background: "rgba(140,100,255,0.15)",
+                }),
+          }}
+        >
+          {!isPending && (
+            <span
+              className="t-num"
+              style={{ fontSize: 11, color: "var(--violet-bright)", lineHeight: 1 }}
+            >
+              {set.setNumber}
+            </span>
+          )}
+        </div>
+
+        <input
+          type="text"
+          inputMode="decimal"
+          placeholder="0"
+          value={weight}
+          onChange={(e) => {
+            const v = normalizeDecimal(e.target.value);
+            setWeight(v);
+            debouncedSave(v, reps);
+          }}
+          className="t-num"
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            textAlign: "center",
+            fontSize: 20,
+            fontWeight: 700,
+            color: "var(--ink)",
+            minWidth: 0,
+            minHeight: 56,
+          }}
+          aria-label="น้ำหนัก (kg)"
+        />
+
+        <span style={{ color: "var(--ink-soft)", fontSize: 16, flexShrink: 0 }}>×</span>
+
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="0"
+          value={reps}
+          onChange={(e) => {
+            setReps(e.target.value);
+            debouncedSave(weight, e.target.value);
+          }}
+          className="t-num"
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            textAlign: "center",
+            fontSize: 20,
+            fontWeight: 700,
+            color: "var(--ink)",
+            minWidth: 0,
+            minHeight: 56,
+          }}
+          aria-label="จำนวนครั้ง"
+        />
+
+        <button
+          type="button"
+          onClick={handleWarmupToggle}
+          aria-label={t("warmupSet")}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            background: warmup ? "rgba(255,200,80,0.18)" : "transparent",
+            border: warmup ? "1px solid rgba(255,200,80,0.4)" : "1px solid rgba(255,255,255,0.12)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            fontFamily: "Chakra Petch, monospace",
+            fontSize: 10,
+            fontWeight: 700,
+            color: warmup ? "rgba(255,200,80,0.9)" : "var(--ink-faint)",
+            transition: "background 0.15s, border-color 0.15s, color 0.15s",
+          }}
+        >
+          W
+        </button>
+        <button
+          type="button"
+          onClick={handleComplete}
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, oklch(65% 0.22 280), oklch(60% 0.20 240))",
+            boxShadow: "0 8px 20px -8px rgba(120,90,255,0.55)",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            transition: "transform 0.1s",
+          }}
+          aria-label="เสร็จ"
+        >
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none" aria-hidden="true">
+            <path
+              d="M1 7L7 13L17 1"
+              stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
       </div>
-
-      <input
-        type="text"
-        inputMode="decimal"
-        placeholder="0"
-        value={weight}
-        onChange={(e) => {
-          const v = normalizeDecimal(e.target.value);
-          setWeight(v);
-          debouncedSave(v, reps);
-        }}
-        className="t-num"
-        style={{
-          flex: 1,
-          background: "transparent",
-          border: "none",
-          outline: "none",
-          textAlign: "center",
-          fontSize: 20,
-          fontWeight: 700,
-          color: "var(--ink)",
-          minWidth: 0,
-          minHeight: 56,
-        }}
-        aria-label="น้ำหนัก (kg)"
-      />
-
-      <span style={{ color: "var(--ink-soft)", fontSize: 16, flexShrink: 0 }}>×</span>
-
-      <input
-        type="text"
-        inputMode="numeric"
-        placeholder="0"
-        value={reps}
-        onChange={(e) => {
-          setReps(e.target.value);
-          debouncedSave(weight, e.target.value);
-        }}
-        className="t-num"
-        style={{
-          flex: 1,
-          background: "transparent",
-          border: "none",
-          outline: "none",
-          textAlign: "center",
-          fontSize: 20,
-          fontWeight: 700,
-          color: "var(--ink)",
-          minWidth: 0,
-          minHeight: 56,
-        }}
-        aria-label="จำนวนครั้ง"
-      />
-
-      <button
-        type="button"
-        onClick={handleComplete}
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, oklch(65% 0.22 280), oklch(60% 0.20 240))",
-          boxShadow: "0 8px 20px -8px rgba(120,90,255,0.55)",
-          border: "none",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          transition: "transform 0.1s",
-        }}
-        aria-label="เสร็จ"
-      >
-        <svg width="18" height="14" viewBox="0 0 18 14" fill="none" aria-hidden="true">
-          <path
-            d="M1 7L7 13L17 1"
-            stroke="white"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
     </div>
   );
 }

@@ -25,9 +25,13 @@
     "greeting": "สวัสดี",
     "todayWorkout": "ออกกำลังกายวันนี้",
     "noProgram": "ยังไม่มีโปรแกรม",
+    "noProgramHint": "เลือกโปรแกรมเพื่อเริ่มต้นออกกำลังกาย",
     "browseTemplates": "เลือกโปรแกรม",
     "startWorkout": "เริ่มออกกำลังกาย",
-    "streak": "วันติดต่อกัน"
+    "streak": "วันติดต่อกัน",
+    "thisWeek": "สัปดาห์นี้",
+    "daysGoal": "/ {n} วัน",
+    "inProgress": "กำลังออกกำลังกายอยู่ — แตะเพื่อกลับ"
   },
   "workout": {
     "logSet": "บันทึกเซ็ต",
@@ -50,7 +54,12 @@
     "resume": "ต่อเลย",
     "discard": "เริ่มใหม่",
     "undoAdvance": "เลิกทำ",
+    "confirmDelete": "ลบเซ็ต",
+    "swapExercise": "เปลี่ยนท่า",
+    "lastSession": "ครั้งก่อน",
+    "warmupSet": "วอร์มอัพ",
     "offlineCannotComplete": "ออฟไลน์ — ต่อเน็ตก่อนจบการออกกำลังกาย",
+    "exitWorkout": "ออกจากการออกกำลังกาย",
     "summaryKicker": "WORKOUT COMPLETE · เสร็จแล้ว",
     "summaryTitle": "ทำได้ดีมาก, {name}",
     "summaryShareLine": "แชร์ไปยัง LINE",
@@ -132,6 +141,8 @@
     "browse": "เลือกโปรแกรม",
     "startProgram": "เริ่มโปรแกรมนี้",
     "daysPerWeek": "วันต่อสัปดาห์",
+    "daysPerWeekUnit": "วัน/สัปดาห์",
+    "trainingDays": "วันฝึก",
     "difficulty": "ระดับ",
     "title": "โปรแกรมออกกำลังกาย",
     "filter": {
@@ -141,7 +152,18 @@
       "days": "วัน/สัปดาห์"
     },
     "empty": "ไม่พบโปรแกรมที่ตรงกับตัวกรอง",
-    "currentlyActive": "กำลังใช้โปรแกรมนี้อยู่"
+    "currentlyActive": "กำลังใช้โปรแกรมนี้อยู่",
+    "goals": {
+      "build_muscle": "สร้างกล้าม",
+      "lose_fat": "ลดไขมัน",
+      "get_stronger": "แข็งแรงขึ้น",
+      "stay_active": "กระฉับกระเฉง"
+    },
+    "difficultyLabels": {
+      "beginner": "มือใหม่",
+      "intermediate": "ระดับกลาง",
+      "advanced": "ขั้นสูง"
+    }
   },
   "programs": {
     "started": "เริ่มโปรแกรมแล้ว",
