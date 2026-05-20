@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth";
-import { getDb, pushSubscriptions, users } from "@saifit/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { getDb, pushSubscriptions } from "@saifit/db";
 import { eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
@@ -12,20 +12,15 @@ if (vapidPublicKey && vapidPrivateKey) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   if (!vapidPublicKey || !vapidPrivateKey) {
     return NextResponse.json({ error: "Push not configured" }, { status: 503 });
   }
 
   const db = getDb();
-  const user = await db.query.users.findFirst({
-    where: eq(users.betterAuthId, session.user.id),
-    columns: { id: true },
-  });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   const subs = await db
     .select()
     .from(pushSubscriptions)

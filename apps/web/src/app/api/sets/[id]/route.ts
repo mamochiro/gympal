@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth";
-import { getDb, users, workoutSets, workouts } from "@saifit/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { getDb, workoutSets, workouts } from "@saifit/db";
 import { and, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
@@ -12,20 +12,18 @@ const patchSchema = v.object({
 });
 
 async function resolveSet(request: NextRequest, setId: string) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return { error: "Unauthorized", status: 401 } as const;
-
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
   const db = getDb();
-  const user = await db.query.users.findFirst({ where: eq(users.betterAuthId, session.user.id) });
-  if (!user) return { error: "User not found", status: 404 } as const;
 
   const set = await db.query.workoutSets.findFirst({ where: eq(workoutSets.id, setId) });
-  if (!set) return { error: "Not found", status: 404 } as const;
+  if (!set) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const workout = await db.query.workouts.findFirst({
     where: and(eq(workouts.id, set.workoutId), eq(workouts.userId, user.id)),
   });
-  if (!workout) return { error: "Forbidden", status: 403 } as const;
+  if (!workout) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   return { set, user, db } as const;
 }
@@ -33,8 +31,7 @@ async function resolveSet(request: NextRequest, setId: string) {
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const resolved = await resolveSet(request, id);
-  if ("error" in resolved)
-    return NextResponse.json({ error: resolved.error }, { status: resolved.status as number });
+  if (resolved instanceof NextResponse) return resolved;
 
   let body: unknown;
   try {
@@ -64,8 +61,7 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const resolved = await resolveSet(request, id);
-  if ("error" in resolved)
-    return NextResponse.json({ error: resolved.error }, { status: resolved.status as number });
+  if (resolved instanceof NextResponse) return resolved;
   await resolved.db.delete(workoutSets).where(eq(workoutSets.id, id));
   return NextResponse.json({ ok: true });
 }

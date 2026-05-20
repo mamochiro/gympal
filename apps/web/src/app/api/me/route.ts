@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth-helpers";
 import {
   getDb,
   personalRecords,
@@ -46,21 +46,17 @@ const patchSchema = v.object({
 });
 
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const db = getDb();
-  const user = await db.query.users.findFirst({
-    where: eq(users.betterAuthId, session.user.id),
-  });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   return NextResponse.json(user);
 }
 
 export async function PATCH(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   let body: unknown;
   try {
@@ -119,22 +115,17 @@ export async function PATCH(request: NextRequest) {
   await db
     .update(users)
     .set({ ...updateData, updatedAt: new Date() })
-    .where(eq(users.betterAuthId, session.user.id));
+    .where(eq(users.id, user.id));
 
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   const db = getDb();
-  const user = await db.query.users.findFirst({
-    where: eq(users.betterAuthId, session.user.id),
-    columns: { id: true },
-  });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   const uid = user.id;
 
   // Delete in dependency order (tables without ON DELETE CASCADE).

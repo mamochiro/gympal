@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth";
-import { getDb, routineExercises, routines, users } from "@saifit/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { getDb, routineExercises, routines } from "@saifit/db";
 import { asc, count, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
@@ -17,17 +17,10 @@ const createSchema = v.object({
   ),
 });
 
-async function getUser(session: { user: { id: string } }) {
-  const db = getDb();
-  return db.query.users.findFirst({ where: eq(users.betterAuthId, session.user.id) });
-}
-
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const user = await getUser(session);
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   const db = getDb();
   const rows = await db
@@ -49,11 +42,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const user = await getUser(session);
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   const body = await request.json();
   const parsed = v.safeParse(createSchema, body);

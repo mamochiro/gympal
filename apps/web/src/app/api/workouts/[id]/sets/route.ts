@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth";
-import { getDb, personalRecords, users, workoutSets, workouts } from "@saifit/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { getDb, personalRecords, workoutSets, workouts } from "@saifit/db";
 import { estimate1RM } from "@saifit/shared";
 import { and, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
@@ -17,8 +17,9 @@ const createSetSchema = v.object({
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: workoutId } = await params;
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   let body: unknown;
   try {
@@ -31,8 +32,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const db = getDb();
-  const user = await db.query.users.findFirst({ where: eq(users.betterAuthId, session.user.id) });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   // Verify workout ownership
   const workout = await db.query.workouts.findFirst({

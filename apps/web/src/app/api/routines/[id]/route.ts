@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth";
-import { exercises, getDb, routineExercises, routines, users } from "@saifit/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { exercises, getDb, routineExercises, routines } from "@saifit/db";
 import { and, asc, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
@@ -27,12 +27,10 @@ async function resolveRoutine(routineId: string, userId: string) {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
   const db = getDb();
-  const user = await db.query.users.findFirst({ where: eq(users.betterAuthId, session.user.id) });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const { id } = await params;
   const routine = await resolveRoutine(id, user.id);
@@ -59,12 +57,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
   const db = getDb();
-  const user = await db.query.users.findFirst({ where: eq(users.betterAuthId, session.user.id) });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const { id } = await params;
   const routine = await resolveRoutine(id, user.id);
@@ -110,12 +106,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
   const db = getDb();
-  const user = await db.query.users.findFirst({ where: eq(users.betterAuthId, session.user.id) });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const { id } = await params;
   const routine = await resolveRoutine(id, user.id);

@@ -1,18 +1,17 @@
-import { auth } from "@/lib/auth";
-import { exercises, getDb, users, workoutSets, workouts } from "@saifit/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { exercises, getDb, workoutSets, workouts } from "@saifit/db";
 import { estimate1RM } from "@saifit/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   const { slug } = await params;
 
   const db = getDb();
-  const user = await db.query.users.findFirst({ where: eq(users.betterAuthId, session.user.id) });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const exercise = await db.query.exercises.findFirst({ where: eq(exercises.slug, slug) });
   if (!exercise) return NextResponse.json({ error: "Not found" }, { status: 404 });

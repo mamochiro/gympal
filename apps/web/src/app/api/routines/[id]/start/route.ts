@@ -1,15 +1,13 @@
-import { auth } from "@/lib/auth";
-import { getDb, routines, users, workouts } from "@saifit/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { getDb, routines, workouts } from "@saifit/db";
 import { and, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
   const db = getDb();
-  const user = await db.query.users.findFirst({ where: eq(users.betterAuthId, session.user.id) });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const { id } = await params;
   const routine = await db.query.routines.findFirst({

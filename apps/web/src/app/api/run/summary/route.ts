@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth";
-import { getDb, runningSessions, users } from "@saifit/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { getDb, runningSessions } from "@saifit/db";
 import { and, desc, eq, gte } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -10,16 +10,11 @@ function formatPace(secPerKm: number): string {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   const db = getDb();
-  const user = await db.query.users.findFirst({
-    where: eq(users.betterAuthId, session.user.id),
-    columns: { id: true },
-  });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   // Current week Mon–Sun in Asia/Bangkok
   const todayBkk = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
   const today = new Date(todayBkk);

@@ -1,6 +1,6 @@
-import { auth } from "@/lib/auth";
-import { exercises, getDb, users } from "@saifit/db";
-import { and, eq, gt, ilike, or, sql } from "drizzle-orm";
+import { requireUser } from "@/lib/auth-helpers";
+import { exercises, getDb } from "@saifit/db";
+import { and, gt, ilike, or, sql } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 
@@ -110,8 +110,9 @@ const createSchema = v.object({
 });
 
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   let body: unknown;
   try {
@@ -124,12 +125,6 @@ export async function POST(request: NextRequest) {
   if (!result.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const db = getDb();
-  const user = await db.query.users.findFirst({
-    where: eq(users.betterAuthId, session.user.id),
-    columns: { id: true },
-  });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   const { nameTh, nameEn, category, muscleGroups, equipment, isBodyweight } = result.output;
   const slug = `custom-${nameTh
     .toLowerCase()

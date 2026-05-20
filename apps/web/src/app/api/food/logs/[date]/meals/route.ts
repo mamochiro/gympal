@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth";
-import { foodLogs, getDb, mealItems, users } from "@saifit/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { foodLogs, getDb, mealItems } from "@saifit/db";
 import { and, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
@@ -38,8 +38,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ date: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   let body: unknown;
   try {
@@ -56,12 +57,6 @@ export async function POST(
     return NextResponse.json({ error: "Invalid date" }, { status: 400 });
 
   const db = getDb();
-  const user = await db.query.users.findFirst({
-    where: eq(users.betterAuthId, session.user.id),
-    columns: { id: true },
-  });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   const logId = await resolveLog(db, user.id, date);
   if (!logId) return NextResponse.json({ error: "Log not found for date" }, { status: 404 });
 
@@ -87,8 +82,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ date: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   let body: unknown;
   try {
@@ -102,12 +98,6 @@ export async function PATCH(
 
   const { date } = await params;
   const db = getDb();
-  const user = await db.query.users.findFirst({
-    where: eq(users.betterAuthId, session.user.id),
-    columns: { id: true },
-  });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   const logId = await resolveLog(db, user.id, date);
   if (!logId) return NextResponse.json({ error: "Log not found" }, { status: 404 });
 
@@ -129,8 +119,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ date: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
 
   let body: unknown;
   try {
@@ -144,12 +135,6 @@ export async function DELETE(
 
   const { date } = await params;
   const db = getDb();
-  const user = await db.query.users.findFirst({
-    where: eq(users.betterAuthId, session.user.id),
-    columns: { id: true },
-  });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   const logId = await resolveLog(db, user.id, date);
   if (!logId) return NextResponse.json({ error: "Log not found" }, { status: 404 });
 
