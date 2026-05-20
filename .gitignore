@@ -33,6 +33,13 @@ Thumbs.db
 # Claude Code — local machine settings only (agents/commands/skills are committed)
 .claude/settings.local.json
 
+# Harness runtime state — auto-generated per session, not source
+.claude/state/
+.claude/sessions/
+.claude/memory/
+apps/*/.claude/
+packages/*/.claude/
+
 # Logs
 *.log
 npm-debug.log*
