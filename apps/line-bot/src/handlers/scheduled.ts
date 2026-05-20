@@ -1,12 +1,12 @@
 import { messagingApi } from "@line/bot-sdk";
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull, sql } from "drizzle-orm";
 import {
   getUsersDueForReminder,
   getUsersWithActiveStreak,
   getUsersWithNoWorkoutToday,
   getWeeklySummary,
 } from "../../../../packages/db/src/helpers";
-import { reminderLog, users } from "../../../../packages/db/src/schema";
+import { reminderLog, users, workoutSets, workouts } from "../../../../packages/db/src/schema";
 import { getDb } from "../lib/db";
 import type { Env } from "../types";
 
@@ -103,11 +103,46 @@ async function handleWeeklySummary(env: Env): Promise<void> {
     const summary = await getWeeklySummary(db, user.id);
     if (summary.workoutCount === 0) continue;
 
-    const vol = Math.round(summary.totalVolume).toLocaleString();
+    const [lastWeekVolRow] = await db
+      .select({
+        value: sql<number>`COALESCE(SUM(${workoutSets.weightKg}::numeric * ${workoutSets.reps}::numeric), 0)::float`,
+      })
+      .from(workoutSets)
+      .innerJoin(workouts, eq(workoutSets.workoutId, workouts.id))
+      .where(
+        and(
+          eq(workouts.userId, user.id),
+          isNotNull(workouts.completedAt),
+          sql`${workouts.completedAt} >= NOW() - INTERVAL '14 days'`,
+          sql`${workouts.completedAt} < NOW() - INTERVAL '7 days'`,
+          isNotNull(workoutSets.weightKg),
+        ),
+      );
+    const lastWeekVol = Number(lastWeekVolRow?.value ?? 0);
+    const thisVol = summary.totalVolume;
+    const volFormatted = Math.round(thisVol).toLocaleString();
+
+    let volCompareTh: string;
+    let volCompareEn: string;
+    if (lastWeekVol === 0) {
+      volCompareTh = `📊 ปริมาณสัปดาห์นี้: ${volFormatted} kg (สัปดาห์แรก!)`;
+      volCompareEn = `📊 Volume this week: ${volFormatted} kg (first week!)`;
+    } else {
+      const pct = Math.round(((thisVol - lastWeekVol) / lastWeekVol) * 100);
+      if (pct >= 0) {
+        volCompareTh = `📈 ปริมาณสัปดาห์นี้: ${volFormatted} kg (+${pct}% จากสัปดาห์ที่แล้ว)`;
+        volCompareEn = `📈 Volume this week: ${volFormatted} kg (+${pct}% vs last week)`;
+      } else {
+        volCompareTh = `📉 ปริมาณสัปดาห์นี้: ${volFormatted} kg (${pct}% จากสัปดาห์ที่แล้ว)`;
+        volCompareEn = `📉 Volume this week: ${volFormatted} kg (${pct}% vs last week)`;
+      }
+    }
+
+    const vol = Math.round(thisVol).toLocaleString();
     const text =
       user.locale === "en"
-        ? `This week 📊\n✅ Workouts: ${summary.workoutCount}\n💪 Total volume: ${vol} kg\n🔥 Streak: ${summary.streakDays} days`
-        : `สรุปสัปดาห์นี้ 📊\n✅ ออกกำลังกาย: ${summary.workoutCount} ครั้ง\n💪 ปริมาณรวม: ${vol} กก.\n🔥 Streak: ${summary.streakDays} วัน`;
+        ? `This week 📊\n✅ Workouts: ${summary.workoutCount}\n💪 Total volume: ${vol} kg\n🔥 Streak: ${summary.streakDays} days\n${volCompareEn}`
+        : `สรุปสัปดาห์นี้ 📊\n✅ ออกกำลังกาย: ${summary.workoutCount} ครั้ง\n💪 ปริมาณรวม: ${vol} กก.\n🔥 Streak: ${summary.streakDays} วัน\n${volCompareTh}`;
 
     let success = true;
     try {
