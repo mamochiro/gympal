@@ -8,6 +8,7 @@ const patchSchema = v.object({
   weightKg: v.optional(v.pipe(v.string(), v.maxLength(20))),
   reps: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
   notes: v.optional(v.string()),
+  isWarmup: v.optional(v.boolean()),
 });
 
 async function resolveSet(request: NextRequest, setId: string) {
@@ -49,6 +50,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (parsed.output.weightKg !== undefined) updateData.weightKg = parsed.output.weightKg;
   if (parsed.output.reps !== undefined) updateData.reps = parsed.output.reps;
   if (parsed.output.notes !== undefined) updateData.notes = parsed.output.notes;
+  if (parsed.output.isWarmup !== undefined) updateData.isWarmup = parsed.output.isWarmup;
 
   if (Object.keys(updateData).length === 0) return NextResponse.json({ ok: true });
 

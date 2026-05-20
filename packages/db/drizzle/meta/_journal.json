@@ -50,6 +50,13 @@
       "when": 1778456985334,
       "tag": "0006_supreme_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778579881871,
+      "tag": "0007_friendly_lester",
+      "breakpoints": true
     }
   ]
 }

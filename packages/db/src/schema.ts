@@ -170,6 +170,7 @@ export const workoutSets = pgTable(
     reps: integer("reps").notNull(),
     weightKg: numeric("weight_kg"),
     isBodyweight: boolean("is_bodyweight").notNull().default(false),
+    isWarmup: boolean("is_warmup").notNull().default(false),
     rpe: integer("rpe"),
     notes: text("notes"),
     clientSetId: varchar("client_set_id", { length: 36 }),
