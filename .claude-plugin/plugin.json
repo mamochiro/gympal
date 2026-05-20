@@ -1,0 +1,8 @@
+{
+  "name": "saifit",
+  "version": "0.1.0",
+  "description": "Fitness tracking PWA + LINE OA bot for Bangkok gym-goers",
+  "skills": [
+    "./skills/"
+  ]
+}
