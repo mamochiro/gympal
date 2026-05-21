@@ -34,6 +34,19 @@ export interface MergedSet {
  *
  * "Matching" = same exerciseId AND same setNumber.
  */
+/**
+ * Default starting weight (kg) for the bar of a barbell exercise.
+ * Returns 20 for barbell equipment, null otherwise. Saves the user one or
+ * two keystrokes when logging a first-ever barbell set with no prev history.
+ *
+ * Olympic men's bar = 20 kg (Bangkok-gym default). Women's bar (15 kg) and
+ * specialty bars (EZ, trap, safety) are deferred until per-user configuration
+ * lands; ship a single sensible default.
+ */
+export function barWeightForExercise(exercise: { equipment: string }): number | null {
+  return exercise.equipment === "barbell" ? 20 : null;
+}
+
 export function mergeSetsWithPrev(currentSets: SetForMerge[], prevSets: PrevSet[]): MergedSet[] {
   return currentSets.map((current) => {
     const hasServerData = current.weightKg !== null || current.reps > 0;

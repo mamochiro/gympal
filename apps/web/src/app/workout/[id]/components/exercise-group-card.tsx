@@ -3,7 +3,7 @@
 import { ExerciseAnimation } from "@/components/exercise-animation";
 import { ExerciseAnimBySlug } from "@/components/exercises";
 import { useRestTimerStore } from "@/stores/rest-timer-store";
-import { mergeSetsWithPrev } from "@saifit/shared";
+import { barWeightForExercise, mergeSetsWithPrev } from "@saifit/shared";
 import { ArrowLeftRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
@@ -56,8 +56,21 @@ export function ExerciseGroupCard({
       })),
       prevSets,
     );
-    return new Map(merged.map((m) => [m.setId, m]));
-  }, [sets, prevSets]);
+    const barDefault = effectiveExercise?.equipment
+      ? barWeightForExercise({ equipment: effectiveExercise.equipment })
+      : null;
+    return new Map(
+      merged.map((m) => {
+        if (!m.isSuggested && !m.weight && !m.reps && barDefault !== null) {
+          return [
+            m.setId,
+            { setId: m.setId, weight: String(barDefault), reps: "", isSuggested: true },
+          ];
+        }
+        return [m.setId, m];
+      }),
+    );
+  }, [sets, prevSets, effectiveExercise?.equipment]);
 
   return (
     <div className="glass" style={{ padding: "16px 18px" }}>

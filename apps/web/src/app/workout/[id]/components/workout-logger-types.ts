@@ -16,6 +16,7 @@ export interface WorkoutSet {
     nameTh: string;
     slug: string;
     muscleGroups: string[];
+    equipment: string;
   } | null;
 }
 

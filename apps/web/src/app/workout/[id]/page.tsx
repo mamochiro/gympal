@@ -43,6 +43,7 @@ export default async function WorkoutPage({
         nameTh: exercises.nameTh,
         slug: exercises.slug,
         muscleGroups: exercises.muscleGroups,
+        equipment: exercises.equipment,
       },
     })
     .from(workoutSets)

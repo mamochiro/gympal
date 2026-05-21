@@ -42,6 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         nameTh: exercises.nameTh,
         slug: exercises.slug,
         muscleGroups: exercises.muscleGroups,
+        equipment: exercises.equipment,
       },
     })
     .from(workoutSets)

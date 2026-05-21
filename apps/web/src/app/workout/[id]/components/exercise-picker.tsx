@@ -15,7 +15,10 @@ interface Exercise {
   equipment: string;
 }
 
-export type PickedExercise = Pick<Exercise, "id" | "nameTh" | "nameEn" | "muscleGroups">;
+export type PickedExercise = Pick<
+  Exercise,
+  "id" | "nameTh" | "nameEn" | "muscleGroups" | "equipment"
+>;
 
 const MUSCLE_FILTERS = [
   { value: "", labelKey: "filterAll" },
@@ -78,7 +81,13 @@ function CreateExerciseForm({
     },
     onSuccess: (ex) => {
       queryClient.invalidateQueries({ queryKey: ["exercises"] });
-      onCreated({ id: ex.id, nameTh: ex.nameTh, nameEn: ex.nameEn, muscleGroups: ex.muscleGroups });
+      onCreated({
+        id: ex.id,
+        nameTh: ex.nameTh,
+        nameEn: ex.nameEn,
+        muscleGroups: ex.muscleGroups,
+        equipment: ex.equipment,
+      });
     },
   });
 
@@ -343,6 +352,7 @@ export function ExercisePicker({
                           nameTh: ex.nameTh,
                           nameEn: ex.nameEn,
                           muscleGroups: ex.muscleGroups,
+                          equipment: ex.equipment,
                         })
                       }
                       className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-secondary transition-colors text-left min-h-14"

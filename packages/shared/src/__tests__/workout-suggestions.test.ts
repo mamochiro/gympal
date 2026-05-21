@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { type PrevSet, type SetForMerge, mergeSetsWithPrev } from "../workout-suggestions";
+import {
+  type PrevSet,
+  type SetForMerge,
+  barWeightForExercise,
+  mergeSetsWithPrev,
+} from "../workout-suggestions";
 
 const set = (overrides: Partial<SetForMerge> = {}): SetForMerge => ({
   id: "set-1",
@@ -71,5 +76,23 @@ describe("mergeSetsWithPrev", () => {
   it("preserves the input setId on each merged entry", () => {
     const merged = mergeSetsWithPrev([set({ id: "abc" }), set({ id: "xyz", setNumber: 2 })], []);
     expect(merged.map((m) => m.setId)).toEqual(["abc", "xyz"]);
+  });
+});
+
+describe("barWeightForExercise", () => {
+  it("returns 20 for barbell equipment", () => {
+    expect(barWeightForExercise({ equipment: "barbell" })).toBe(20);
+  });
+
+  it("returns null for dumbbell", () => {
+    expect(barWeightForExercise({ equipment: "dumbbell" })).toBeNull();
+  });
+
+  it("returns null for bodyweight", () => {
+    expect(barWeightForExercise({ equipment: "bodyweight" })).toBeNull();
+  });
+
+  it("returns null for machine", () => {
+    expect(barWeightForExercise({ equipment: "machine" })).toBeNull();
   });
 });
