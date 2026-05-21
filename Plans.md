@@ -19,6 +19,31 @@ _harness_version: "4.3.3"
 
 ## 🟡 Not Started
 
+### Phase 18 — Return-User Loop (target: 2026-05-22 → 2026-05-24)
+
+Theme: **make the second workout effortless.** The product's core promise is "log a workout in 3 seconds, see your gains." Right now the first workout requires typing every weight + rep. The second workout requires the same typing again. Closing that gap is the single highest-leverage retention move for MVP. Each task is independent and shippable on its own.
+
+Direction picked over alternatives (cross-feature insights / LINE bot polish / design polish / production foundation) because the core workout loop is the product, and depth in the core compounds for every retained user. Other directions are valuable but secondary.
+
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 18.1 | Auto-fill weight/reps from previous session. `getLastWorkoutSetsForExercise` already exists (15.2); `LastSessionRow` already *displays* prior values but doesn't *pre-fill*. Wire `prevSets` (already a prop on `WorkoutLoggerView`) into each set row's initial input state so a returning user can tap "complete" without typing if they're repeating. Edits override the pre-fill. [tdd:required] | New `mergeSetsWithPrev(currentSets, prevSets)` helper in `@saifit/shared` returns merged values with explicit "is suggested" flag so UI can render a subtle visual hint; ≥4 vitest cases (no prev, partial prev, full overlap, set-count mismatch); `SetRow` / `FirstSetRow` consume the suggested values; biome + tsc + vitest green | - | cc:TODO |
+| 18.2 | Plate calculator popover. Tap a weight value in `SetRow` → opens a small overlay showing the plate breakdown for that weight (assuming 20 kg bar). Bangkok gyms vary on bar weight; ship with 20 kg hardcoded for now, settings field deferred. [tdd:required] | New `computePlates(weightKg, barWeightKg)` helper in `@saifit/shared` returns symmetric plate list (45 / 25 / 20 / 15 / 10 / 5 / 2.5 / 1.25 kg) or `null` if unrepresentable (e.g., < bar weight, odd to the half-kg); ≥5 vitest cases incl. underweight / fractional / overload; popover renders in TH+EN; biome+tsc green | - | cc:TODO |
+| 18.3 | Smart progression nudge. If the last 2 completed sessions for an exercise hit target reps on every working set, surface a subtle `+2.5 kg?` chip above the weight input. Tap to accept (pre-fills the suggested weight). Dismissible. Deload-aware: skip if the recent session looks like a deload (≤80% of previous weight). [tdd:required] | New `suggestProgression(sessions, currentWeight)` helper in `@saifit/shared`: returns `{ kind: 'increase', deltaKg } \| null`; ≥6 vitest cases (no data / 1 session / 2 successful / 2 mixed / deload / first-time exercise); chip renders + responds to tap; biome+tsc green | - | cc:TODO |
+| 18.4 | Home "repeat last workout" card. Above the current in-progress block (or replacing the empty-state CTA), show: "Last workout: {name}, {N} days ago" + a primary CTA "Repeat" that starts a new workout pre-filled with last session's exercises and sets. Uses the 18.1 mechanism. Hidden if user has an in-progress workout (existing resume card wins). [tdd:skip:ui-composition-with-existing-helpers] | Server-side query in `app/page.tsx` selects the most recent completed workout (≤14 d); new component `<RepeatLastWorkoutCard>`; clicking it POSTs to `/api/workouts` with `templateId` (or `routineId`) of the prior workout; landing in `WorkoutLoggerView` shows pre-filled sets (via 18.1); TH+EN copy; biome+tsc green | 18.1 | cc:TODO |
+| 18.5 | Bar-weight default for barbell exercises. When no last-session data exists *and* the exercise's `muscleGroups` indicates barbell (or `slug` matches a barbell pattern: `^(bench|squat|deadlift|ohp|barbell-)`), default the weight input to 20 kg instead of empty. Removes the "type 20 then your real weight" friction on first-time barbell logs. [tdd:required] | New `barWeightForExercise(exercise)` helper in `@saifit/shared` returns `20 \| null`; ≥4 vitest cases (bench / squat / dumbbell-curl / bodyweight); `FirstSetRow` consumes default when `prevSet` is absent; biome+tsc green | - | cc:TODO |
+| 18.6 | Quality gate: full repo biome + tsc + vitest. Confirm the new helpers landed in `@saifit/shared` with no regression in existing tests. Update CHANGELOG-style summary in commit. [tdd:skip:meta] | tsc clean across 4 packages; biome 0 errors; vitest 100% pass with the new cases added by 18.1, 18.2, 18.3, 18.5 (≥19 new tests) | 18.1, 18.2, 18.3, 18.4, 18.5 | cc:TODO |
+
+#### Non-goals for Phase 18
+
+- No new schema migrations (bar-weight stays hardcoded; user-configurable bar weight deferred)
+- No voice input, no superset support, no plate calculator settings page — could be Phase 19
+- No cross-feature insights (food + body + workout) — different theme, would be its own phase
+- No LINE bot enhancements
+- No design polish (haptics, microinteractions) — measure first
+
+---
+
 ### Phase 17 — CLAUDE.md Compliance Gaps (target: 2026-05-21 → 2026-05-22)
 
 Three specific must-haves from CLAUDE.md that audits confirmed are missing, plus a copy audit. Small, concrete, user-facing. Solo execution (tasks share files).
