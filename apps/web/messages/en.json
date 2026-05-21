@@ -60,6 +60,8 @@
     "swapExercise": "Swap exercise",
     "authExpiredMessage": "Your session expired. Your workout is safe — sign in again to keep saving.",
     "authExpiredCta": "Sign in again",
+    "platesBarOnly": "Bar only",
+    "platesPerSide": "{plates} per side",
     "lastSession": "Last session",
     "warmupSet": "Warm-up",
     "offlineCannotComplete": "Offline — reconnect to finish",

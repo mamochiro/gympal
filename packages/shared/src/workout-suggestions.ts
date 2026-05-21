@@ -34,6 +34,47 @@ export interface MergedSet {
  *
  * "Matching" = same exerciseId AND same setNumber.
  */
+// Available barbell plates (kg), largest first. Greedy fit per side.
+const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25] as const;
+
+export interface PlateEntry {
+  /** Plate weight in kg (one of PLATES_KG). */
+  weightKg: number;
+  /** How many of these plates to load on *each* side. */
+  count: number;
+}
+
+/**
+ * Compute the symmetric plate loadout for `weightKg` total on the bar.
+ *
+ * Returns:
+ *   - PlateEntry[] (possibly empty if weightKg === barWeightKg) when the
+ *     target weight is representable in 1.25 kg increments per side.
+ *   - null when weightKg < barWeightKg, or when the per-side remainder
+ *     can't be expressed with the available plate set.
+ *
+ * Counts are per side; load each plate on both sides for symmetry.
+ */
+export function computePlates(weightKg: number, barWeightKg: number): PlateEntry[] | null {
+  if (weightKg < barWeightKg) return null;
+  let perSide = (weightKg - barWeightKg) / 2;
+  // 1.25 kg is the smallest plate → per-side weight must be a multiple of 1.25
+  const remainder = Math.round(perSide * 10000) % 12500;
+  if (remainder !== 0) return null;
+
+  const result: PlateEntry[] = [];
+  for (const plate of PLATES_KG) {
+    const count = Math.floor((perSide + 1e-9) / plate);
+    if (count > 0) {
+      result.push({ weightKg: plate, count });
+      perSide -= count * plate;
+      perSide = Math.round(perSide * 10000) / 10000;
+    }
+  }
+  if (Math.abs(perSide) > 1e-6) return null;
+  return result;
+}
+
 /**
  * Default starting weight (kg) for the bar of a barbell exercise.
  * Returns 20 for barbell equipment, null otherwise. Saves the user one or

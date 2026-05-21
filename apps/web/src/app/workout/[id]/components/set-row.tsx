@@ -2,10 +2,10 @@
 
 import { apiFetch } from "@/lib/api-fetch";
 import { enqueue, getClientId } from "@/lib/workout-queue";
-import { normalizeDecimal } from "@saifit/shared";
+import { computePlates, normalizeDecimal } from "@saifit/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 const UNDO_MS = 8000;
 
@@ -19,7 +19,7 @@ interface WorkoutSet {
   isBodyweight: boolean;
   isWarmup: boolean;
   completedAt: string;
-  exercise: { nameTh: string; nameEn: string } | null;
+  exercise: { nameTh: string; nameEn: string; equipment?: string } | null;
 }
 
 export function SetRow({
@@ -58,6 +58,17 @@ export function SetRow({
   const [warmup, setWarmup] = useState(set.isWarmup);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const platesText = useMemo(() => {
+    if (set.exercise?.equipment !== "barbell") return null;
+    const w = Number.parseFloat(weight);
+    if (Number.isNaN(w) || w <= 0) return null;
+    const plates = computePlates(w, 20);
+    if (plates === null) return null;
+    if (plates.length === 0) return t("platesBarOnly");
+    const parts = plates.flatMap((p) => Array(p.count).fill(String(p.weightKg))).join(" + ");
+    return t("platesPerSide", { plates: parts });
+  }, [set.exercise?.equipment, weight, t]);
 
   const saveSet = useCallback(
     async (w: string, r: string) => {
@@ -382,6 +393,19 @@ export function SetRow({
           {t("previousValue", { weight: prevWeight, reps: prevReps })}
         </div>
       ) : null}
+      {platesText && (
+        <div
+          style={{
+            padding: "2px 14px 0",
+            fontSize: 10,
+            color: "var(--violet-bright)",
+            fontFamily: "K2D, sans-serif",
+            letterSpacing: "0.04em",
+          }}
+        >
+          {platesText}
+        </div>
+      )}
       <div
         style={{
           display: "flex",

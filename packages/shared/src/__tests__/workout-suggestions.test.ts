@@ -3,6 +3,7 @@ import {
   type PrevSet,
   type SetForMerge,
   barWeightForExercise,
+  computePlates,
   mergeSetsWithPrev,
 } from "../workout-suggestions";
 
@@ -76,6 +77,46 @@ describe("mergeSetsWithPrev", () => {
   it("preserves the input setId on each merged entry", () => {
     const merged = mergeSetsWithPrev([set({ id: "abc" }), set({ id: "xyz", setNumber: 2 })], []);
     expect(merged.map((m) => m.setId)).toEqual(["abc", "xyz"]);
+  });
+});
+
+describe("computePlates", () => {
+  it("returns 25+5 for 80 kg on a 20 kg bar (30 per side)", () => {
+    expect(computePlates(80, 20)).toEqual([
+      { weightKg: 25, count: 1 },
+      { weightKg: 5, count: 1 },
+    ]);
+  });
+
+  it("returns 25+5+1.25 for 82.5 kg on a 20 kg bar (fractional)", () => {
+    expect(computePlates(82.5, 20)).toEqual([
+      { weightKg: 25, count: 1 },
+      { weightKg: 5, count: 1 },
+      { weightKg: 1.25, count: 1 },
+    ]);
+  });
+
+  it("returns [] when weight equals the bar (bar only)", () => {
+    expect(computePlates(20, 20)).toEqual([]);
+  });
+
+  it("returns null when weight is below the bar", () => {
+    expect(computePlates(15, 20)).toBeNull();
+  });
+
+  it("returns null when remainder is not a multiple of 1.25 (e.g., 22.6)", () => {
+    expect(computePlates(22.6, 20)).toBeNull();
+  });
+
+  it("stacks multiples of the largest plate first: 140 kg on 20 bar = 25×2 + 10 per side", () => {
+    expect(computePlates(140, 20)).toEqual([
+      { weightKg: 25, count: 2 },
+      { weightKg: 10, count: 1 },
+    ]);
+  });
+
+  it("uses 1.25 kg plates for the smallest fractional jump: 22.5 kg = 1.25 per side", () => {
+    expect(computePlates(22.5, 20)).toEqual([{ weightKg: 1.25, count: 1 }]);
   });
 });
 
