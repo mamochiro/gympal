@@ -37,6 +37,7 @@ Thumbs.db
 .claude/state/
 .claude/sessions/
 .claude/memory/
+.harness-mem/
 apps/*/.claude/
 packages/*/.claude/
 
