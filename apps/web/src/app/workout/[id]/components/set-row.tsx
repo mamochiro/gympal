@@ -28,6 +28,7 @@ export function SetRow({
   status = "current",
   prevWeight,
   prevReps,
+  suggested,
   onPR,
   onSetComplete,
 }: {
@@ -36,14 +37,21 @@ export function SetRow({
   status?: "current" | "pending";
   prevWeight?: string | null | undefined;
   prevReps?: number | null | undefined;
+  suggested?: { weight: string; reps: string; isSuggested: boolean } | undefined;
   onPR: (exerciseName: string, value: number, type: string) => void;
   onSetComplete: (exerciseName: string, setNumber: number, weight: string, reps: string) => void;
 }) {
   const t = useTranslations("workout");
   const qc = useQueryClient();
 
-  const [weight, setWeight] = useState(set.weightKg ?? "");
-  const [reps, setReps] = useState(String(set.reps));
+  const initialWeight = set.weightKg ?? suggested?.weight ?? "";
+  const initialReps = set.reps > 0 ? String(set.reps) : (suggested?.reps ?? "0");
+
+  const [weight, setWeight] = useState(initialWeight);
+  const [reps, setReps] = useState(initialReps);
+  const [isSuggestion, setIsSuggestion] = useState(
+    !!suggested?.isSuggested && set.weightKg === null && set.reps === 0,
+  );
   const [completed, setCompleted] = useState(!!set.completedAt && set.reps > 0);
   const [undoVisible, setUndoVisible] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -91,6 +99,7 @@ export function SetRow({
     const clientSetId = `${getClientId()}-${set.id}`;
 
     setCompleted(true);
+    setIsSuggestion(false);
     setUndoVisible(true);
     setTimeout(() => setUndoVisible(false), UNDO_MS);
 
@@ -418,6 +427,7 @@ export function SetRow({
           onChange={(e) => {
             const v = normalizeDecimal(e.target.value);
             setWeight(v);
+            setIsSuggestion(false);
             debouncedSave(v, reps);
           }}
           className="t-num"
@@ -429,7 +439,7 @@ export function SetRow({
             textAlign: "center",
             fontSize: 20,
             fontWeight: 700,
-            color: "var(--ink)",
+            color: isSuggestion ? "var(--ink-soft)" : "var(--ink)",
             minWidth: 0,
             minHeight: 56,
           }}
@@ -445,6 +455,7 @@ export function SetRow({
           value={reps}
           onChange={(e) => {
             setReps(e.target.value);
+            setIsSuggestion(false);
             debouncedSave(weight, e.target.value);
           }}
           className="t-num"
@@ -456,7 +467,7 @@ export function SetRow({
             textAlign: "center",
             fontSize: 20,
             fontWeight: 700,
-            color: "var(--ink)",
+            color: isSuggestion ? "var(--ink-soft)" : "var(--ink)",
             minWidth: 0,
             minHeight: 56,
           }}

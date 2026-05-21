@@ -3,8 +3,10 @@
 import { ExerciseAnimation } from "@/components/exercise-animation";
 import { ExerciseAnimBySlug } from "@/components/exercises";
 import { useRestTimerStore } from "@/stores/rest-timer-store";
+import { mergeSetsWithPrev } from "@saifit/shared";
 import { ArrowLeftRight } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useMemo } from "react";
 import type { PickedExercise } from "./exercise-picker";
 import { FirstSetRow, LastSessionRow } from "./inline-set-row";
 import { SetRow } from "./set-row";
@@ -42,6 +44,20 @@ export function ExerciseGroupCard({
   const effectiveSlug = swappedExercise ? undefined : exercise?.slug;
 
   const firstNonCompletedIdx = sets.findIndex((s) => !(s.completedAt && s.reps > 0));
+
+  const suggestedBySetId = useMemo(() => {
+    const merged = mergeSetsWithPrev(
+      sets.map((s) => ({
+        id: s.id,
+        exerciseId: s.exerciseId,
+        setNumber: s.setNumber,
+        weightKg: s.weightKg,
+        reps: s.reps,
+      })),
+      prevSets,
+    );
+    return new Map(merged.map((m) => [m.setId, m]));
+  }, [sets, prevSets]);
 
   return (
     <div className="glass" style={{ padding: "16px 18px" }}>
@@ -118,6 +134,7 @@ export function ExerciseGroupCard({
           const prev = prevSets.find(
             (p) => p.exerciseId === set.exerciseId && p.setNumber === set.setNumber,
           );
+          const suggested = suggestedBySetId.get(set.id);
           return (
             <SetRow
               key={set.id}
@@ -126,6 +143,7 @@ export function ExerciseGroupCard({
               status={setStatus}
               prevWeight={prev?.weightKg}
               prevReps={prev?.reps}
+              suggested={suggested?.isSuggested ? suggested : undefined}
               onPR={(exerciseName, value, type) => onPR({ exerciseName, value, type })}
               onSetComplete={(exerciseName, setNumber, weight, reps) => {
                 useRestTimerStore.getState().start({

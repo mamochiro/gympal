@@ -17,10 +17,7 @@ import * as v from "valibot";
 export const uuid = v.pipe(v.string(), v.uuid());
 
 /** YYYY-MM-DD calendar date string (no time component). */
-export const dateString = v.pipe(
-  v.string(),
-  v.regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
-);
+export const dateString = v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"));
 
 /** ISO-8601 timestamp string (used for pagination cursors). */
 export const isoTimestamp = v.pipe(v.string(), v.isoTimestamp());

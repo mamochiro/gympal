@@ -1,0 +1,66 @@
+// Pre-fill helpers for the workout logger. The "second workout" experience:
+// when a user repeats an exercise, the previous session's weight/reps should
+// appear as ghost-text suggestions in the inputs. Tap complete without
+// editing to accept; type to override.
+
+export interface SetForMerge {
+  id: string;
+  exerciseId: string;
+  setNumber: number;
+  weightKg: string | null;
+  reps: number;
+}
+
+export interface PrevSet {
+  exerciseId: string;
+  setNumber: number;
+  weightKg: string | null;
+  reps: number;
+}
+
+export interface MergedSet {
+  setId: string;
+  weight: string;
+  reps: string;
+  isSuggested: boolean;
+}
+
+/**
+ * For each current set, return the values to display in the inputs.
+ *
+ * - Server already has values → use them as-is, isSuggested=false.
+ * - Server-empty + matching prev set with a weight → use prev values, isSuggested=true.
+ * - Server-empty + no match (or prev has null weight) → empty strings, isSuggested=false.
+ *
+ * "Matching" = same exerciseId AND same setNumber.
+ */
+export function mergeSetsWithPrev(currentSets: SetForMerge[], prevSets: PrevSet[]): MergedSet[] {
+  return currentSets.map((current) => {
+    const hasServerData = current.weightKg !== null || current.reps > 0;
+    if (hasServerData) {
+      return {
+        setId: current.id,
+        weight: current.weightKg ?? "",
+        reps: current.reps > 0 ? String(current.reps) : "",
+        isSuggested: false,
+      };
+    }
+    const prev = prevSets.find(
+      (p) => p.exerciseId === current.exerciseId && p.setNumber === current.setNumber,
+    );
+    if (!prev || prev.weightKg === null) {
+      return {
+        setId: current.id,
+        weight: "",
+        reps: "",
+        isSuggested: false,
+      };
+    }
+    return {
+      setId: current.id,
+      weight: prev.weightKg,
+      reps: String(prev.reps),
+      isSuggested: true,
+    };
+  });
+}
