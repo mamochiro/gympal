@@ -109,3 +109,83 @@ describe("computeStreakUpdate (streak grace-day)", () => {
     expect(r.newLongest).toBe(10); // unchanged
   });
 });
+
+// ─── Phase 16.8 — hot-path coverage gaps ─────────────────────────────────
+
+describe("estimate1RM (additional edge cases)", () => {
+  it("returns weight unchanged when weight is 0 and reps === 1", () => {
+    expect(estimate1RM(0, 1)).toBe(0);
+  });
+
+  it("scales linearly with weight at fixed reps", () => {
+    const r5 = estimate1RM(100, 5);
+    const r10 = estimate1RM(200, 5);
+    expect(r5).not.toBeNull();
+    expect(r10).not.toBeNull();
+    expect((r10 as number) / (r5 as number)).toBeCloseTo(2, 5);
+  });
+
+  it("Brzycki for 12 reps matches the formula (locked at the cutoff)", () => {
+    // 100 * 36 / (37 - 12) = 144
+    expect(estimate1RM(100, 12)).toBeCloseTo(144, 1);
+  });
+});
+
+describe("normalizeDecimal (additional edge cases)", () => {
+  it("returns empty string unchanged", () => {
+    expect(normalizeDecimal("")).toBe("");
+  });
+
+  it("replaces only the FIRST comma (current behavior — locked)", () => {
+    // Documents current impl: String.replace(",", ".") replaces only the first match.
+    expect(normalizeDecimal("1,000,5")).toBe("1.000,5");
+  });
+
+  it("preserves surrounding whitespace (caller trims)", () => {
+    expect(normalizeDecimal(" 60,5 ")).toBe(" 60.5 ");
+  });
+});
+
+describe("calculateVolume (additional edge cases)", () => {
+  it("single set with weight is weight × reps", () => {
+    expect(calculateVolume([{ reps: 5, weightKg: 100 }])).toBe(500);
+  });
+
+  it("sums correctly across mixed null and non-null sets", () => {
+    expect(
+      calculateVolume([
+        { reps: 8, weightKg: 80 }, // 640
+        { reps: 10, weightKg: null }, // 0 (bodyweight)
+        { reps: 5, weightKg: 100 }, // 500
+      ]),
+    ).toBe(1140);
+  });
+});
+
+describe("computeStreakUpdate (additional edge cases)", () => {
+  it("first-ever workout preserves existing longestStreak when ≥ 1", () => {
+    // Edge case: longestStreak > currentStreak (data inconsistency or imported history)
+    const r = computeStreakUpdate(
+      { currentStreak: 0, longestStreak: 7, lastWorkoutDate: null },
+      "2025-05-10",
+    );
+    expect(r).toEqual({ newCurrent: 1, newLongest: 7 });
+  });
+
+  it("crosses a month boundary correctly", () => {
+    const r = computeStreakUpdate(
+      { currentStreak: 5, longestStreak: 5, lastWorkoutDate: "2025-04-30" },
+      "2025-05-01",
+    );
+    expect(r).toEqual({ newCurrent: 6, newLongest: 6 });
+  });
+
+  it("grace day across month boundary keeps streak", () => {
+    // Last on Apr 29, today is May 1 — diff = 2 days → grace path
+    const r = computeStreakUpdate(
+      { currentStreak: 3, longestStreak: 3, lastWorkoutDate: "2025-04-29" },
+      "2025-05-01",
+    );
+    expect(r).toEqual({ newCurrent: 4, newLongest: 4 });
+  });
+});
