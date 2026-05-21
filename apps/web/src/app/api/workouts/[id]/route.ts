@@ -1,7 +1,15 @@
 import { requireUser } from "@/lib/auth-helpers";
-import { exercises, getDb, pushSubscriptions, streaks, workoutSets, workouts } from "@saifit/db";
+import {
+  exercises,
+  getDb,
+  personalRecords,
+  pushSubscriptions,
+  streaks,
+  workoutSets,
+  workouts,
+} from "@saifit/db";
 import { computeStreakUpdate } from "@saifit/shared";
-import { and, asc, count, eq, sum } from "drizzle-orm";
+import { and, asc, count, eq, inArray, sum } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 
@@ -50,7 +58,35 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .where(eq(workoutSets.workoutId, id))
     .orderBy(asc(workoutSets.setNumber));
 
-  return NextResponse.json({ data: { ...workout, sets } });
+  // Reward data only when the workout is completed — keeps the
+  // in-progress polling query light.
+  let prsAchieved: { exerciseName: string; recordType: string; value: string }[] = [];
+  let currentStreak = 0;
+  if (workout.completedAt !== null && sets.length > 0) {
+    const setIds = sets.map((s) => s.id);
+    const prRows = await db
+      .select({
+        recordType: personalRecords.recordType,
+        value: personalRecords.value,
+        exerciseNameTh: exercises.nameTh,
+        exerciseNameEn: exercises.nameEn,
+      })
+      .from(personalRecords)
+      .innerJoin(exercises, eq(personalRecords.exerciseId, exercises.id))
+      .where(inArray(personalRecords.workoutSetId, setIds));
+    prsAchieved = prRows.map((r) => ({
+      exerciseName: r.exerciseNameTh || r.exerciseNameEn,
+      recordType: r.recordType,
+      value: r.value,
+    }));
+
+    const streakRow = await db.query.streaks.findFirst({
+      where: eq(streaks.userId, user.id),
+    });
+    currentStreak = streakRow?.currentStreak ?? 0;
+  }
+
+  return NextResponse.json({ data: { ...workout, sets, prsAchieved, currentStreak } });
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

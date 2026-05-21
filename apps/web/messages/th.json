@@ -79,7 +79,12 @@
     "summaryTime": "เวลา",
     "summaryVolume": "ปริมาณ",
     "summarySets": "เซ็ต",
-    "summaryExercises": "ท่า"
+    "summaryExercises": "ท่า",
+    "summaryStreakBadge": "Streak {n} วัน",
+    "summaryPrTitle": "สถิติส่วนตัวใหม่",
+    "recordTypeMaxWeight": "น้ำหนักสูงสุด",
+    "recordTypeMaxReps": "ครั้งสูงสุด",
+    "recordTypeMaxVolume": "ปริมาณสูงสุด"
   },
   "restTimer": {
     "title": "พักก่อน",

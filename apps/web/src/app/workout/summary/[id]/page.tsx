@@ -13,6 +13,12 @@ interface WorkoutSet {
   exercise: { nameTh: string; nameEn: string } | null;
 }
 
+interface PrAchieved {
+  exerciseName: string;
+  recordType: string;
+  value: string;
+}
+
 interface WorkoutData {
   id: string;
   name: string;
@@ -20,10 +26,13 @@ interface WorkoutData {
   completedAt: string | null;
   durationSeconds: number | null;
   sets: WorkoutSet[];
+  prsAchieved?: PrAchieved[];
+  currentStreak?: number;
 }
 
 interface MeData {
   displayName: string;
+  locale?: "th" | "en";
 }
 
 function formatDuration(seconds: number): string {
@@ -119,7 +128,32 @@ export default function WorkoutSummaryPage({ params }: { params: Promise<{ id: s
   const firstName = displayName.split(" ")[0] ?? displayName;
 
   const exerciseGroups = groupByExercise(workout.sets);
-  const shareText = `ฉันเพิ่งออกกำลังกายเสร็จแล้ว! ${workout.name} · ${setCount} เซ็ต · ${volume.toLocaleString()} kg\nติดตามสุขภาพด้วย Saifit`;
+  const prsAchieved = workout.prsAchieved ?? [];
+  const currentStreak = workout.currentStreak ?? 0;
+  const locale = me?.locale === "en" ? "en" : "th";
+
+  const recordTypeLabel = (rt: string): string =>
+    rt === "max_weight"
+      ? t("recordTypeMaxWeight")
+      : rt === "max_reps"
+        ? t("recordTypeMaxReps")
+        : rt === "max_volume"
+          ? t("recordTypeMaxVolume")
+          : rt;
+
+  const shareTextBase =
+    locale === "en"
+      ? `Just crushed a workout 💪 ${workout.name} · ${setCount} sets · ${volume.toLocaleString()} kg`
+      : `เพิ่งออกกำลังกายเสร็จ 💪 ${workout.name} · ${setCount} เซ็ต · ${volume.toLocaleString()} กก.`;
+  const sharePrFragment =
+    prsAchieved.length > 0
+      ? locale === "en"
+        ? `\n🏆 New PR: ${prsAchieved[0]?.exerciseName} ${Math.round(Number.parseFloat(prsAchieved[0]?.value ?? "0"))} kg!`
+        : `\n🏆 สถิติใหม่: ${prsAchieved[0]?.exerciseName} ${Math.round(Number.parseFloat(prsAchieved[0]?.value ?? "0"))} กก.!`
+      : "";
+  const shareTextFooter =
+    locale === "en" ? "\nTracking gains with Saifit" : "\nติดตามสุขภาพด้วย Saifit";
+  const shareText = `${shareTextBase}${sharePrFragment}${shareTextFooter}`;
   const lineShareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(shareText)}`;
 
   const stats = [
@@ -210,7 +244,81 @@ export default function WorkoutSummaryPage({ params }: { params: Promise<{ id: s
             year: "numeric",
           })}
         </p>
+        {currentStreak > 0 && (
+          <p
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              marginTop: 12,
+              padding: "6px 14px",
+              borderRadius: 999,
+              background: "rgba(255,140,40,0.12)",
+              border: "1px solid rgba(255,140,40,0.4)",
+              fontFamily: "K2D, sans-serif",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#FFB66B",
+            }}
+          >
+            🔥 {t("summaryStreakBadge", { n: currentStreak })}
+          </p>
+        )}
       </div>
+
+      {/* PR callout */}
+      {prsAchieved.length > 0 && (
+        <div style={{ position: "relative", padding: "24px 20px 0" }}>
+          <div
+            className="glass glass-glow"
+            style={{
+              padding: "16px 18px",
+              border: "1px solid rgba(255,215,80,0.4)",
+              boxShadow: "0 0 24px rgba(255,215,80,0.15)",
+            }}
+          >
+            <p
+              className="t-label"
+              style={{
+                color: "#FFD759",
+                letterSpacing: "0.18em",
+                marginBottom: 10,
+              }}
+            >
+              🏆 {t("summaryPrTitle", { n: prsAchieved.length })}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {prsAchieved.map((pr, i) => (
+                <div
+                  key={`${pr.exerciseName}-${pr.recordType}-${i}`}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    fontFamily: "K2D, sans-serif",
+                  }}
+                >
+                  <span style={{ fontSize: 14, color: "var(--ink)" }}>{pr.exerciseName}</span>
+                  <span style={{ fontSize: 13, color: "var(--ink-mute)" }}>
+                    {recordTypeLabel(pr.recordType)}
+                    <span
+                      className="t-num"
+                      style={{
+                        marginLeft: 8,
+                        fontWeight: 700,
+                        color: "#FFD759",
+                        fontSize: 15,
+                      }}
+                    >
+                      {Math.round(Number.parseFloat(pr.value) * 10) / 10}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats grid */}
       <div

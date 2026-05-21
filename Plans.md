@@ -19,6 +19,23 @@ _harness_version: "4.3.3"
 
 ## 🟡 Not Started
 
+### Phase 20 — Post-Workout Reward (target: 2026-05-21)
+
+Single-task phase. The moment a user finishes a workout is their highest-dopamine moment with the app — and the current summary screen shows a stat dump. Add the two reward signals the workout layer already collected but isn't surfacing: **PRs hit during this workout** and **current streak**. Same iteration model as Phase 19.
+
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 20.1 | Post-workout reward upgrade. Extend `GET /api/workouts/[id]` to include `prsAchieved` (PRs whose `workoutSetId` belongs to this workout) and `currentStreak` — only when `workout.completedAt !== null` so the polling workout-logger query stays light. Summary page renders a PR callout (per PR: exercise name + record type + value) and a streak badge near the title. Share-to-LINE text localized via user locale and enriched with PR mention when present. [tdd:required] | Server gates new fields on completion (no impact on logger-view polling); summary renders streak badge + gold PR callout when present; share text localized + enriched with first PR; TH+EN 354/354 parity; biome+tsc green; workspace 109/109 | - | cc:完了 |
+
+#### Non-goals for Phase 20
+
+- No new schema migrations
+- No volume-vs-last-session comparison (deferred — needs data design)
+- No image/visual share asset (LINE Imagemap is a future iteration)
+- No haptic / sound feedback
+
+---
+
 ### Phase 19 — Weekly Summary Polish (target: 2026-05-21)
 
 Single-task phase. Iteration model: pick the next valuable thing, ship it, repeat. Picked from the engagement-surface audit: the weekly LINE summary is the most-seen recurring touchpoint and is currently plain text. Upgrading it to Flex Message is a premium-feel win for every active user every Sunday, without adding product surface.

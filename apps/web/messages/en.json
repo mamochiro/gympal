@@ -79,7 +79,12 @@
     "summaryTime": "TIME",
     "summaryVolume": "VOLUME",
     "summarySets": "SETS",
-    "summaryExercises": "EXERCISES"
+    "summaryExercises": "EXERCISES",
+    "summaryStreakBadge": "{n}-day streak",
+    "summaryPrTitle": "NEW PERSONAL RECORD",
+    "recordTypeMaxWeight": "max weight",
+    "recordTypeMaxReps": "max reps",
+    "recordTypeMaxVolume": "max volume"
   },
   "restTimer": {
     "title": "Rest",
