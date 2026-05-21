@@ -19,6 +19,23 @@ _harness_version: "4.3.3"
 
 ## 🟡 Not Started
 
+### Phase 19 — Weekly Summary Polish (target: 2026-05-21)
+
+Single-task phase. Iteration model: pick the next valuable thing, ship it, repeat. Picked from the engagement-surface audit: the weekly LINE summary is the most-seen recurring touchpoint and is currently plain text. Upgrading it to Flex Message is a premium-feel win for every active user every Sunday, without adding product surface.
+
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 19.1 | Weekly summary as LINE Flex Message. Replace plain-text `pushMessage` in `handleWeeklySummary` with a Flex bubble: header, stat rows (workouts / total volume / streak), comparison line (vs last week), CTA button to web app. Pure builder `buildWeeklySummaryFlex(summary, locale, webAppUrl)` in `apps/line-bot/src/lib/`. alt-text fallback for older clients. [tdd:required] | `buildWeeklySummaryFlex` shipped with 8 vitest cases (shape / +delta green / -delta amber / first-week neutral / TH / EN / thousands-separator / CTA uri); `handleWeeklySummary` sends Flex; line-bot tsc + vitest 13/13 green; workspace 109/109 | - | cc:完了 |
+
+#### Non-goals for Phase 19
+
+- No upgrade to daily-reminder or streak-warning Flex (each warrants its own design pass; this phase is one shippable iteration)
+- No bar chart / sparkline (data shape adequate without it for v1)
+- No carousel of multiple bubbles
+- No new product features
+
+---
+
 ### Phase 18 — Return-User Loop (target: 2026-05-22 → 2026-05-24)
 
 Theme: **make the second workout effortless.** The product's core promise is "log a workout in 3 seconds, see your gains." Right now the first workout requires typing every weight + rep. The second workout requires the same typing again. Closing that gap is the single highest-leverage retention move for MVP. Each task is independent and shippable on its own.

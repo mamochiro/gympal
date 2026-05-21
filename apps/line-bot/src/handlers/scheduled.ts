@@ -8,6 +8,7 @@ import {
 } from "../../../../packages/db/src/helpers";
 import { reminderLog, users, workoutSets, workouts } from "../../../../packages/db/src/schema";
 import { getDb } from "../lib/db";
+import { buildWeeklySummaryFlex } from "../lib/flex-weekly-summary";
 import type { Env } from "../types";
 
 async function handleDailyReminder(env: Env): Promise<void> {
@@ -119,36 +120,23 @@ async function handleWeeklySummary(env: Env): Promise<void> {
         ),
       );
     const lastWeekVol = Number(lastWeekVolRow?.value ?? 0);
-    const thisVol = summary.totalVolume;
-    const volFormatted = Math.round(thisVol).toLocaleString();
-
-    let volCompareTh: string;
-    let volCompareEn: string;
-    if (lastWeekVol === 0) {
-      volCompareTh = `📊 ปริมาณสัปดาห์นี้: ${volFormatted} kg (สัปดาห์แรก!)`;
-      volCompareEn = `📊 Volume this week: ${volFormatted} kg (first week!)`;
-    } else {
-      const pct = Math.round(((thisVol - lastWeekVol) / lastWeekVol) * 100);
-      if (pct >= 0) {
-        volCompareTh = `📈 ปริมาณสัปดาห์นี้: ${volFormatted} kg (+${pct}% จากสัปดาห์ที่แล้ว)`;
-        volCompareEn = `📈 Volume this week: ${volFormatted} kg (+${pct}% vs last week)`;
-      } else {
-        volCompareTh = `📉 ปริมาณสัปดาห์นี้: ${volFormatted} kg (${pct}% จากสัปดาห์ที่แล้ว)`;
-        volCompareEn = `📉 Volume this week: ${volFormatted} kg (${pct}% vs last week)`;
-      }
-    }
-
-    const vol = Math.round(thisVol).toLocaleString();
-    const text =
-      user.locale === "en"
-        ? `This week 📊\n✅ Workouts: ${summary.workoutCount}\n💪 Total volume: ${vol} kg\n🔥 Streak: ${summary.streakDays} days\n${volCompareEn}`
-        : `สรุปสัปดาห์นี้ 📊\n✅ ออกกำลังกาย: ${summary.workoutCount} ครั้ง\n💪 ปริมาณรวม: ${vol} กก.\n🔥 Streak: ${summary.streakDays} วัน\n${volCompareTh}`;
+    const locale = user.locale === "en" ? "en" : "th";
+    const flex = buildWeeklySummaryFlex(
+      {
+        workoutCount: summary.workoutCount,
+        totalVolumeKg: summary.totalVolume,
+        streakDays: summary.streakDays,
+        lastWeekVolumeKg: lastWeekVol,
+      },
+      locale,
+      env.WEB_APP_URL,
+    );
 
     let success = true;
     try {
       await client.pushMessage({
         to: user.lineUserId,
-        messages: [{ type: "text", text }],
+        messages: [flex],
       });
     } catch (err) {
       success = false;
