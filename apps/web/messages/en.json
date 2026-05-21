@@ -58,6 +58,8 @@
     "undoAdvance": "Undo",
     "confirmDelete": "Delete set",
     "swapExercise": "Swap exercise",
+    "authExpiredMessage": "Your session expired. Your workout is safe — sign in again to keep saving.",
+    "authExpiredCta": "Sign in again",
     "lastSession": "Last session",
     "warmupSet": "Warm-up",
     "offlineCannotComplete": "Offline — reconnect to finish",

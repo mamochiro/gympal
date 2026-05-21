@@ -1,6 +1,8 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-fetch";
 import { gcSynced, getPending, getPendingCount, markFailed, markSynced } from "@/lib/workout-queue";
+import { useAuthStore } from "@/stores/auth-store";
 import { useViewportStore } from "@/stores/viewport-store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,6 +16,7 @@ export function useWorkoutSync(workoutId: string) {
 
   const flush = useCallback(async () => {
     if (flushingRef.current || !navigator.onLine) return;
+    if (useAuthStore.getState().expired) return; // freeze sync while session is expired
     const pending = await getPending(workoutId);
     if (pending.length === 0) return;
     flushingRef.current = true;
@@ -25,7 +28,7 @@ export function useWorkoutSync(workoutId: string) {
           type: e.operation.type,
           payload: e.operation.payload,
         }));
-      const res = await fetch(`/api/workouts/${workoutId}/sync`, {
+      const res = await apiFetch(`/api/workouts/${workoutId}/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

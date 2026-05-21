@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-fetch";
 import { enqueue, getClientId } from "@/lib/workout-queue";
 import { normalizeDecimal } from "@saifit/shared";
 import { useQueryClient } from "@tanstack/react-query";
@@ -94,7 +95,7 @@ export function SetRow({
     setTimeout(() => setUndoVisible(false), UNDO_MS);
 
     try {
-      const res = await fetch(`/api/workouts/${workoutId}/sets`, {
+      const res = await apiFetch(`/api/workouts/${workoutId}/sets`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -145,7 +146,7 @@ export function SetRow({
 
   const handleDeleteConfirm = useCallback(async () => {
     try {
-      await fetch(`/api/sets/${set.id}`, { method: "DELETE" });
+      await apiFetch(`/api/sets/${set.id}`, { method: "DELETE" });
     } catch {
       // Ignore network errors — server may be offline; set still removed optimistically
     }
@@ -167,7 +168,7 @@ export function SetRow({
       };
     });
     try {
-      await fetch(`/api/sets/${set.id}`, {
+      await apiFetch(`/api/sets/${set.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isWarmup: next }),

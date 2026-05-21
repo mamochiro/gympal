@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-fetch";
 import { enqueue } from "@/lib/workout-queue";
 import { useRestTimerStore } from "@/stores/rest-timer-store";
 import { normalizeDecimal } from "@saifit/shared";
@@ -47,7 +48,7 @@ export function FirstSetRow({
     const completedAt = new Date().toISOString();
     setSaving(true);
     try {
-      const res = await fetch(`/api/workouts/${workoutId}/sets`, {
+      const res = await apiFetch(`/api/workouts/${workoutId}/sets`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

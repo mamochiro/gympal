@@ -58,6 +58,8 @@
     "undoAdvance": "เลิกทำ",
     "confirmDelete": "ลบเซ็ต",
     "swapExercise": "เปลี่ยนท่า",
+    "authExpiredMessage": "เซสชันหมดอายุ การฝึกของคุณยังปลอดภัย ลงชื่อเข้าใช้อีกครั้งเพื่อบันทึกต่อ",
+    "authExpiredCta": "เข้าสู่ระบบอีกครั้ง",
     "lastSession": "ครั้งก่อน",
     "warmupSet": "วอร์มอัพ",
     "offlineCannotComplete": "ออฟไลน์ — ต่อเน็ตก่อนจบการออกกำลังกาย",

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-fetch";
 import { useViewportStore } from "@/stores/viewport-store";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -22,7 +23,7 @@ export function CompleteWorkoutBar({
   const mutation = useMutation({
     mutationFn: () => {
       const durationSeconds = Math.round((Date.now() - new Date(startedAt).getTime()) / 1000);
-      return fetch(`/api/workouts/${workoutId}`, {
+      return apiFetch(`/api/workouts/${workoutId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

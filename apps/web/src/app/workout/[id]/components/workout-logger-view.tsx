@@ -3,6 +3,7 @@
 import { useRestTimerStore } from "@/stores/rest-timer-store";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { AuthExpiredBanner } from "./auth-expired-banner";
 import { CompleteWorkoutBar } from "./complete-workout-bar";
 import { ExerciseGroupCard } from "./exercise-group-card";
 import { ExercisePicker, type PickedExercise } from "./exercise-picker";
@@ -127,6 +128,8 @@ export function WorkoutLoggerView({
         showSavedLocally={showSavedLocally}
         isOnline={isOnline}
       />
+
+      <AuthExpiredBanner />
 
       <ExerciseProgressBar groups={exerciseGroups} />
 
