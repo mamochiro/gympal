@@ -29,12 +29,7 @@ export async function GET(request: NextRequest) {
       totalVolume: Number.parseFloat(stats?.totalVolume ?? "0"),
       currentStreak: streak?.currentStreak ?? 0,
       longestStreak: streak?.longestStreak ?? 0,
-      lastWorkoutDate:
-        streak?.lastWorkoutDate instanceof Date
-          ? streak.lastWorkoutDate.toISOString()
-          : streak?.lastWorkoutDate
-            ? String(streak.lastWorkoutDate)
-            : null,
+      lastWorkoutDate: streak?.lastWorkoutDate ?? null,
     },
   });
 }

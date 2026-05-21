@@ -209,7 +209,10 @@ export const streaks = pgTable("streaks", {
     .unique(),
   currentStreak: integer("current_streak").notNull().default(0),
   longestStreak: integer("longest_streak").notNull().default(0),
-  lastWorkoutDate: date("last_workout_date", { mode: "date" }).$type<Date>(),
+  // String mode (YYYY-MM-DD) for cross-driver consistency:
+  // node-postgres returns Date for `date` columns in `mode: 'date'`,
+  // neon-http returns ISO strings. Using default string mode normalizes both.
+  lastWorkoutDate: date("last_workout_date"),
   graceUsedThisWindow: boolean("grace_used_this_window").notNull().default(false),
   updatedAt: timestamp("updated_at").notNull().defaultNow().$type<Date>(),
 });

@@ -558,7 +558,7 @@ export async function seedDevUser(db: Db) {
       userId: DEV_USER_ID,
       currentStreak: 5,
       longestStreak: 7,
-      lastWorkoutDate: yesterday,
+      lastWorkoutDate: yesterday.toISOString().slice(0, 10),
       graceUsedThisWindow: false,
     })
     .onConflictDoNothing();

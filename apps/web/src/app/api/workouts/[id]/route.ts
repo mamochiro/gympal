@@ -91,12 +91,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const streak = await db.query.streaks.findFirst({ where: eq(streaks.userId, user.id) });
 
-    const dateToStr = (d: Date | string | null | undefined): string | null => {
-      if (!d) return null;
-      return typeof d === "string" ? d.substring(0, 10) : d.toISOString().substring(0, 10);
-    };
-
-    const lastStr = dateToStr(streak?.lastWorkoutDate ?? null);
+    const lastStr = streak?.lastWorkoutDate ?? null;
 
     if (lastStr !== todayBangkok) {
       const { newCurrent, newLongest } = computeStreakUpdate(
@@ -108,14 +103,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         todayBangkok,
       );
 
-      const todayDate = new Date(`${todayBangkok}T00:00:00Z`);
-
       if (!streak) {
         await db.insert(streaks).values({
           userId: user.id,
           currentStreak: newCurrent,
           longestStreak: newLongest,
-          lastWorkoutDate: todayDate,
+          lastWorkoutDate: todayBangkok,
         });
       } else {
         await db
@@ -123,7 +116,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           .set({
             currentStreak: newCurrent,
             longestStreak: newLongest,
-            lastWorkoutDate: todayDate,
+            lastWorkoutDate: todayBangkok,
             updatedAt: new Date(),
           })
           .where(eq(streaks.userId, user.id));
