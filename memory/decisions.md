@@ -12,8 +12,49 @@ trade-offs** briefly and reliably.
 ## Index
 
 - 2026-05-21: Phase 18 focuses on workout-core depth, not breadth or insights #strategy #mvp #retention
+- 2026-05-21: Defer 18.3 (progression nudge) — magic numbers need telemetry, not guesses #scope-reduction #heuristics #ux
 
 ---
+
+## 2026-05-21: Defer 18.3 (progression nudge) — magic numbers need telemetry, not guesses #scope-reduction #heuristics #ux
+
+### Conclusion
+
+- 18.3 ("+2.5 kg?" nudge after 2 successful sessions) is deferred mid-phase. The remaining Phase 18 work (18.1, 18.2, 18.4, 18.5, 18.6) stays in scope and ships.
+
+### Background
+
+- 18.3 requires three magic numbers: a fixed +2.5 kg jump, an 8-rep "target" threshold for declaring a session successful, and an 80% recent-vs-prior weight ratio to detect deloads. Without telemetry on rep distributions per exercise or week-over-week weight changes, all three are educated guesses. Shipping speculative coaching logic risks nagging users with bad advice — worse than shipping no coaching.
+
+### Options
+
+- A (picked): Defer. Mark task as `deferred` in Plans.md with the revisit condition. Don't ship 18.3 in Phase 18.
+- B: Ship with the magic numbers and reserve the right to tune later. Risk: bad first-impression nags users away.
+- C: Ship behind a feature flag, off by default. Cost of adding flag infra > value of the unflipped feature.
+- D: Ship as a one-tap settings toggle ("show progression suggestions"). Still doesn't answer "are the thresholds right".
+
+### Reasoning
+
+- Asymmetric risk: a wrong nudge is more harmful than no nudge. Users who notice it don't think "neat suggestion", they think "the app doesn't understand me".
+- The other 18.x tasks (auto-fill, plate calculator, bar default, repeat-last-workout card) make the second workout effortless *without* opinionated coaching. That's the actual product promise.
+- Telemetry to validate the thresholds doesn't exist yet, and adding it (Sentry / PostHog / etc.) is its own Phase.
+
+### Impact / trade-offs
+
+- Phase 18 ships with 4 user-visible improvements instead of 5. Theme intact.
+- No code rot — the helper file is the right place for it later; nothing committed today blocks 18.3 from being picked back up.
+- Future Phase pickup: design 18.3 with real rep-distribution data so the threshold is empirically defensible.
+
+### Revisit when
+
+- Per-user telemetry exists for: rep counts per set / session-over-session weight changes per exercise / dismissal rates on similar UI hints.
+- A user explicitly asks "why doesn't the app suggest I go up in weight?"
+- A power-user persona is being targeted where opinionated coaching is the differentiator (not the current MVP positioning).
+
+### Related
+
+- PR / Issue: Plans.md Phase 18 (2026-05-21), commit b660a7d (phase plan)
+- references: [[2026-05-21-phase-18-workout-core-depth]]
 
 ## 2026-05-21: Phase 18 focuses on workout-core depth, not breadth or insights #strategy #mvp #retention
 

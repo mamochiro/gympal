@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
 const createSchema = v.object({
   name: v.optional(v.pipe(v.string(), v.maxLength(256))),
   userProgramId: v.optional(v.pipe(v.string(), v.uuid())),
+  cloneFromWorkoutId: v.optional(v.pipe(v.string(), v.uuid())),
 });
 
 export async function POST(request: NextRequest) {
@@ -106,15 +107,58 @@ export async function POST(request: NextRequest) {
     if (!prog) return NextResponse.json({ error: "Program not found" }, { status: 404 });
   }
 
+  // If cloning, fetch the source workout (must belong to user) and its sets
+  let cloneSource: typeof workouts.$inferSelect | null = null;
+  let cloneSets: {
+    exerciseId: string;
+    setNumber: number;
+    isBodyweight: boolean;
+    isWarmup: boolean;
+  }[] = [];
+  if (parsed.output.cloneFromWorkoutId) {
+    const src = await db.query.workouts.findFirst({
+      where: and(eq(workouts.id, parsed.output.cloneFromWorkoutId), eq(workouts.userId, user.id)),
+    });
+    if (!src) {
+      return NextResponse.json({ error: "Source workout not found" }, { status: 404 });
+    }
+    cloneSource = src;
+    cloneSets = await db
+      .select({
+        exerciseId: workoutSets.exerciseId,
+        setNumber: workoutSets.setNumber,
+        isBodyweight: workoutSets.isBodyweight,
+        isWarmup: workoutSets.isWarmup,
+      })
+      .from(workoutSets)
+      .where(eq(workoutSets.workoutId, parsed.output.cloneFromWorkoutId));
+  }
+
   const [workout] = await db
     .insert(workouts)
     .values({
       userId: user.id,
-      userProgramId: parsed.output.userProgramId ?? null,
-      name: parsed.output.name ?? "Workout",
+      userProgramId: parsed.output.userProgramId ?? cloneSource?.userProgramId ?? null,
+      name: parsed.output.name ?? cloneSource?.name ?? "Workout",
       startedAt: new Date(),
     })
     .returning();
+
+  if (workout && cloneSets.length > 0) {
+    const placeholderCompletedAt = workout.startedAt;
+    await db.insert(workoutSets).values(
+      cloneSets.map((s) => ({
+        workoutId: workout.id,
+        exerciseId: s.exerciseId,
+        setNumber: s.setNumber,
+        reps: 0,
+        weightKg: null,
+        isBodyweight: s.isBodyweight,
+        isWarmup: s.isWarmup,
+        completedAt: placeholderCompletedAt,
+      })),
+    );
+  }
 
   return NextResponse.json({ data: workout }, { status: 201 });
 }

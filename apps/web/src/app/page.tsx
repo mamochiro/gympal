@@ -15,6 +15,7 @@ import { and, count, desc, eq, gte, inArray, isNotNull, isNull } from "drizzle-o
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import Link from "next/link";
+import { RepeatLastWorkoutCard } from "./_components/repeat-last-workout-card";
 
 interface SplitDay {
   dayLabel: string;
@@ -59,6 +60,7 @@ export default async function HomePage() {
     inProgressRows,
     thisWeekRows,
     routineCountRows,
+    lastCompletedRows,
   ] = await Promise.all([
     db.query.streaks.findFirst({ where: eq(streaks.userId, user.id) }),
     db
@@ -101,9 +103,26 @@ export default async function HomePage() {
         ),
       ),
     db.select({ n: count() }).from(routines).where(eq(routines.userId, user.id)),
+    db
+      .select({
+        id: workouts.id,
+        name: workouts.name,
+        completedAt: workouts.completedAt,
+      })
+      .from(workouts)
+      .where(
+        and(
+          eq(workouts.userId, user.id),
+          isNotNull(workouts.completedAt),
+          gte(workouts.completedAt, fourteenDaysAgo),
+        ),
+      )
+      .orderBy(desc(workouts.completedAt))
+      .limit(1),
   ]);
 
   const inProgressWorkout = inProgressRows[0] ?? null;
+  const lastCompletedWorkout = lastCompletedRows[0] ?? null;
   const activeProgram = activeProgramRows[0] ?? null;
   const weeklyCount = thisWeekRows[0]?.n ?? 0;
   const routineCount = routineCountRows[0]?.n ?? 0;
@@ -321,6 +340,20 @@ export default async function HomePage() {
               </svg>
             </div>
           </Link>
+        )}
+
+        {/* Repeat last workout — only when no in-progress workout */}
+        {!inProgressWorkout && lastCompletedWorkout && (
+          <RepeatLastWorkoutCard
+            lastWorkoutId={lastCompletedWorkout.id}
+            lastWorkoutName={lastCompletedWorkout.name}
+            daysAgo={(() => {
+              const ts = lastCompletedWorkout.completedAt;
+              if (!ts) return 0;
+              const t = ts instanceof Date ? ts.getTime() : new Date(String(ts)).getTime();
+              return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
+            })()}
+          />
         )}
 
         {/* Weekly goal widget */}

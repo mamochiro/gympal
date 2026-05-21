@@ -33,7 +33,13 @@
     "streak": "day streak",
     "thisWeek": "This week",
     "daysGoal": "/ {n} days",
-    "inProgress": "Workout in progress — tap to return"
+    "inProgress": "Workout in progress — tap to return",
+    "repeatLastTitle": "Repeat {name}",
+    "repeatLastSubtitleToday": "Done earlier today",
+    "repeatLastSubtitleYesterday": "Yesterday",
+    "repeatLastSubtitleDaysAgo": "{n} days ago",
+    "repeatLastAria": "Start a new workout based on {name}",
+    "repeatLastStarting": "Starting new workout…"
   },
   "workout": {
     "logSet": "Log set",

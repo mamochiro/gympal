@@ -33,7 +33,13 @@
     "streak": "วันติดต่อกัน",
     "thisWeek": "สัปดาห์นี้",
     "daysGoal": "/ {n} วัน",
-    "inProgress": "กำลังออกกำลังกายอยู่ — แตะเพื่อกลับ"
+    "inProgress": "กำลังออกกำลังกายอยู่ — แตะเพื่อกลับ",
+    "repeatLastTitle": "ทำ {name} อีกครั้ง",
+    "repeatLastSubtitleToday": "เสร็จเมื่อวันนี้",
+    "repeatLastSubtitleYesterday": "เมื่อวานนี้",
+    "repeatLastSubtitleDaysAgo": "{n} วันที่แล้ว",
+    "repeatLastAria": "เริ่มออกกำลังกายใหม่จาก {name}",
+    "repeatLastStarting": "กำลังเริ่มเซสชันใหม่…"
   },
   "workout": {
     "logSet": "บันทึกเซ็ต",
