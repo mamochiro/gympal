@@ -10,6 +10,9 @@
     "lint": "biome check .",
     "test": "vitest run --passWithNoTests"
   },
+  "dependencies": {
+    "valibot": "^1.0.0"
+  },
   "devDependencies": {
     "vitest": "^2.1.8"
   }

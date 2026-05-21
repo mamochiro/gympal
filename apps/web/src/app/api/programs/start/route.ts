@@ -1,11 +1,12 @@
 import { requireUser } from "@/lib/auth-helpers";
 import { getDb, userPrograms } from "@saifit/db";
+import { apiSchemas } from "@saifit/shared";
 import { and, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 
 const startSchema = v.object({
-  templateId: v.pipe(v.string(), v.uuid()),
+  templateId: apiSchemas.uuid,
 });
 
 export async function POST(request: NextRequest) {

@@ -1,11 +1,12 @@
 import { requireUser } from "@/lib/auth-helpers";
 import { foodLogs, getDb, mealItems } from "@saifit/db";
+import { apiSchemas } from "@saifit/shared";
 import { and, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 
 const patchSchema = v.object({
-  date: v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD")),
+  date: apiSchemas.dateString,
   targetKcal: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
   targetProteinG: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
   targetCarbsG: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),

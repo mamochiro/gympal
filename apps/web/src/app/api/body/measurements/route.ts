@@ -1,11 +1,12 @@
 import { requireUser } from "@/lib/auth-helpers";
 import { bodyMeasurements, getDb } from "@saifit/db";
+import { apiSchemas } from "@saifit/shared";
 import { and, desc, eq, gte } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 
 const postSchema = v.object({
-  recordedAt: v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD")),
+  recordedAt: apiSchemas.dateString,
   weightKg: v.optional(v.nullable(v.pipe(v.number(), v.minValue(0)))),
   bodyFatPct: v.optional(v.nullable(v.pipe(v.number(), v.minValue(0), v.maxValue(100)))),
   chestCm: v.optional(v.nullable(v.pipe(v.number(), v.minValue(0)))),

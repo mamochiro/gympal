@@ -1,15 +1,11 @@
 import { requireUser } from "@/lib/auth-helpers";
 import { getDb, userPrograms, workoutSets, workouts } from "@saifit/db";
+import { apiSchemas } from "@saifit/shared";
 import { and, count, countDistinct, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 
-const listSchema = v.object({
-  cursor: v.optional(v.pipe(v.string(), v.isoTimestamp())),
-  limit: v.optional(
-    v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1), v.maxValue(50)),
-  ),
-});
+const listSchema = apiSchemas.cursorPaginationSchema(50);
 
 export async function GET(request: NextRequest) {
   const authResult = await requireUser(request);

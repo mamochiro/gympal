@@ -196,6 +196,10 @@ importers:
         version: 2.1.9(@types/node@25.6.2)(lightningcss@1.32.0)
 
   packages/shared:
+    dependencies:
+      valibot:
+        specifier: ^1.0.0
+        version: 1.4.0(typescript@5.9.3)
     devDependencies:
       vitest:
         specifier: ^2.1.8
