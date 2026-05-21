@@ -1,9 +1,11 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function LineCallbackPage() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const [count, setCount] = useState(3);
 
@@ -67,7 +69,7 @@ export default function LineCallbackPage() {
             lineHeight: 1.2,
           }}
         >
-          เข้าสู่ระบบสำเร็จ
+          {t("lineCallbackSuccess")}
         </p>
         <p
           style={{
@@ -78,14 +80,17 @@ export default function LineCallbackPage() {
             lineHeight: 1.6,
           }}
         >
-          {"กำลังกลับไปในอีก "}
-          <span
-            className="t-num"
-            style={{ color: "var(--violet-bright)", fontSize: 20, fontWeight: 700 }}
-          >
-            {count}
-          </span>
-          {" วินาที"}
+          {t.rich("lineCallbackReturning", {
+            count,
+            num: (chunks) => (
+              <span
+                className="t-num"
+                style={{ color: "var(--violet-bright)", fontSize: 20, fontWeight: 700 }}
+              >
+                {chunks}
+              </span>
+            ),
+          })}
         </p>
       </div>
     </div>

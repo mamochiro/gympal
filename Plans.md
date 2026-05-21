@@ -19,6 +19,27 @@ _harness_version: "4.3.3"
 
 ## 🟡 Not Started
 
+### Phase 17 — CLAUDE.md Compliance Gaps (target: 2026-05-21 → 2026-05-22)
+
+Three specific must-haves from CLAUDE.md that audits confirmed are missing, plus a copy audit. Small, concrete, user-facing. Solo execution (tasks share files).
+
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 17.1 | LINE OAuth "redirecting…" interstitial. CLAUDE.md: prevents PWA reinstall prompt on Android. Audit found page **already existed** at `/auth/line-callback` with 3-second countdown + auto-redirect, wired from `sign-in/page.tsx:40`. Only gap: copy was Thai-only. Added `auth.lineCallbackSuccess` + `auth.lineCallbackReturning` (with `<num>` rich-text tag) to both `th.json` + `en.json`, switched page to `useTranslations` + `t.rich`. [tdd:skip:ui-redirect-flow] | TH+EN parity 339/339; biome+tsc green; no behavior change | - | cc:完了 |
+| 17.2 | Active-workout auth expiry recovery. CLAUDE.md: "LINE auth expiry during active workout → graceful recovery, not logout". `useWorkoutSync` and `FirstSetRow`/`SetRow` POSTs should detect 401, surface an `authExpired` flag instead of redirecting, freeze IndexedDB flush, show a Thai banner with re-signin CTA. [tdd:required] | `useWorkoutSync` exposes `authExpired` from 401 responses; banner renders with Thai+EN copy; vitest covers the 401 branch in workout-queue or sync path; biome+tsc green | - | cc:TODO |
+| 17.3 | Cross-driver date coercion test. CLAUDE.md: "neon-http returns dates as strings; node-postgres returns Date objects — add explicit Drizzle date coercions ... run integration tests against both drivers in CI". Add a `packages/db` vitest suite that loads the schema, mocks both driver shapes (Date object vs ISO string), and asserts Drizzle's normalized output type. [tdd:required] | New test file `packages/db/src/__tests__/date-coercion.test.ts` with ≥3 cases (workout `startedAt`, set `completedAt`, user `createdAt`); both shapes return JS `Date` or `null` consistently; vitest green | - | cc:TODO |
+| 17.4 | Empty-state copy audit. CLAUDE.md: "encouraging prompt, not blank list". Read `th.json`/`en.json` for keys ending in `.empty` / `.noData` etc.; replace generic copy ("ไม่มีข้อมูล", "Empty") with encouraging variants where applicable. Touch only copy, no UI. [tdd:skip:copy-only] | At least 2 empty-state strings improved; th+en parity preserved (key count matches); `pnpm check-locales` (if exists) green; biome+tsc green | - | cc:TODO |
+| 17.5 | Quality gate: full repo biome + tsc + vitest. Commit a CHANGELOG-style summary in commit message. [tdd:skip:meta] | All three green; final commit landed | 17.1, 17.2, 17.3, 17.4 | cc:TODO |
+
+#### Non-goals for Phase 17
+
+- No Playwright/E2E setup (deferred to Phase 18 when a feature justifies the cost)
+- No further component splits (16.4/16.5 left set-row.tsx + guided-workout-view.tsx untouched — fine for now)
+- No new product features beyond closing documented gaps
+- No DB schema changes
+
+---
+
 ### Phase 16 — Tech Debt Sweep (target: this week, 2026-05-21 → 2026-05-28)
 
 Refactor-focused. **No new product behavior.** Goals: reduce duplication, shrink large files, raise test coverage on hot paths. Each task is a self-contained PR-sized unit.

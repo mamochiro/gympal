@@ -19,7 +19,9 @@
     "lineLogin": "เข้าสู่ระบบด้วย LINE",
     "googleLogin": "เข้าสู่ระบบด้วย Google",
     "email": "อีเมล",
-    "password": "รหัสผ่าน"
+    "password": "รหัสผ่าน",
+    "lineCallbackSuccess": "เข้าสู่ระบบสำเร็จ",
+    "lineCallbackReturning": "กำลังกลับไปในอีก <num>{count}</num> วินาที"
   },
   "home": {
     "greeting": "สวัสดี",

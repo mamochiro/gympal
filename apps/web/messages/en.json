@@ -19,7 +19,9 @@
     "lineLogin": "Sign in with LINE",
     "googleLogin": "Sign in with Google",
     "email": "Email",
-    "password": "Password"
+    "password": "Password",
+    "lineCallbackSuccess": "Signed in successfully",
+    "lineCallbackReturning": "Returning in <num>{count}</num> seconds"
   },
   "home": {
     "greeting": "Hello",
