@@ -8,6 +8,8 @@ import {
 } from "../../../../packages/db/src/helpers";
 import { reminderLog, users, workoutSets, workouts } from "../../../../packages/db/src/schema";
 import { getDb } from "../lib/db";
+import { buildDailyReminderFlex } from "../lib/flex-daily-reminder";
+import { buildStreakWarningFlex } from "../lib/flex-streak-warning";
 import { buildWeeklySummaryFlex } from "../lib/flex-weekly-summary";
 import type { Env } from "../types";
 
@@ -26,16 +28,14 @@ async function handleDailyReminder(env: Env): Promise<void> {
   for (const user of dueUsers) {
     if (!user.lineUserId) continue;
 
-    const text =
-      user.locale === "en"
-        ? `Time to work out! 💪 Start here: ${env.WEB_APP_URL}`
-        : `สวัสดี! ถึงเวลาออกกำลังกายแล้ว 💪 เริ่มเลยที่: ${env.WEB_APP_URL}`;
+    const locale = user.locale === "en" ? "en" : "th";
+    const flex = buildDailyReminderFlex(locale, env.WEB_APP_URL);
 
     let success = true;
     try {
       await client.pushMessage({
         to: user.lineUserId,
-        messages: [{ type: "text", text }],
+        messages: [flex],
       });
     } catch (err) {
       success = false;
@@ -163,16 +163,14 @@ async function handleStreakWarning(env: Env): Promise<void> {
   for (const user of atRiskUsers) {
     if (!user.lineUserId) continue;
 
-    const text =
-      user.locale === "en"
-        ? `🔥 Your ${user.currentStreak}-day streak is at risk! Log a set before midnight → ${env.WEB_APP_URL}`
-        : `🔥 Streak ${user.currentStreak} วันของคุณกำลังจะหายไป! ออกสักเซ็ตก่อนเที่ยงคืนนะ → ${env.WEB_APP_URL}`;
+    const locale = user.locale === "en" ? "en" : "th";
+    const flex = buildStreakWarningFlex(user.currentStreak, locale, env.WEB_APP_URL);
 
     let success = true;
     try {
       await client.pushMessage({
         to: user.lineUserId,
-        messages: [{ type: "text", text }],
+        messages: [flex],
       });
     } catch (err) {
       success = false;

@@ -4,17 +4,15 @@ import { ExerciseAnimation } from "@/components/exercise-animation";
 import { ExerciseAnimBySlug, MUSCLE_GROUP_TO_MAP, MuscleMap } from "@/components/exercises";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+
+// Defer the ~100 KB recharts chunk off this route's First Load JS.
+const HistoryChart = dynamic(
+  () => import("./_components/history-chart").then((m) => m.HistoryChart),
+  { ssr: false },
+);
 
 interface HistoryEntry {
   date: string;
@@ -444,57 +442,7 @@ export default function ExerciseDetailPage() {
               {t("noHistory")}
             </p>
           ) : (
-            <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 4, left: -16 }}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="oklch(25% 0.003 90)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: "oklch(40% 0.003 90)", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: "oklch(40% 0.003 90)", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                  unit=" kg"
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "oklch(14% 0.005 90)",
-                    border: "1px solid var(--glass-line)",
-                    borderRadius: "8px",
-                    fontSize: 12,
-                  }}
-                  labelStyle={{ color: "oklch(60% 0.002 90)" }}
-                  itemStyle={{ color: "var(--ink)" }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="maxWeight"
-                  stroke="var(--violet)"
-                  strokeWidth={2}
-                  dot={{ fill: "var(--violet)", r: 3 }}
-                  activeDot={{ r: 5 }}
-                  name="Max kg"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="est1RM"
-                  stroke="var(--violet-bright)"
-                  strokeWidth={1.5}
-                  strokeDasharray="4 2"
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                  connectNulls
-                  name="1RM est."
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <HistoryChart data={chartData} />
           )}
         </div>
       </div>
