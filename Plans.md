@@ -12,7 +12,21 @@ Created: 2026-05-20 · Last updated: 2026-05-22
 
 ## 🟡 Not Started
 
-(none — pick the next thing from the backlog or open a new phase)
+### Phase 22 — Audit follow-ups (2026-05-22)
+
+Direct payoff from Phase-22-precursor audit dispatched via tmux multiagent: 3 missing hot-path indexes + 1 remaining LINE handler still on plain text. Tasks 22.1 + 22.2 are domain-isolated (db-only / line-bot-only), so dispatching them in parallel to `db-agent` and `line-bot-agent` is honest use of the tmux orchestrator pattern.
+
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 22.1 | Add 3 missing indexes via a new Drizzle migration: (a) `workouts(user_id, completed_at)` for 18.4 repeat-last-workout query; (b) `personal_records(workout_set_id)` for 20.1 `prsAchieved` lookup; (c) `workout_sets(workout_id, exercise_id)` for 15.2 last-sets query. Run `drizzle-kit generate` to produce the migration SQL. [tdd:skip:additive-index-only-no-behavior-change] | New migration file in `packages/db/drizzle/`; `pnpm --filter @saifit/db typecheck` green; existing 5 db vitest cases still pass; no schema-data change | - | cc:TODO |
+| 22.2 | Migrate `handleCheckIn` in `apps/line-bot/src/handlers/scheduled.ts` from plain-text push to Flex Message. Create `apps/line-bot/src/lib/flex-checkin.ts` exporting `buildCheckInFlex(locale, webAppUrl)` mirroring 21.1's shape (kicker / title / body / CTA). [tdd:required] | New builder; ≥4 vitest cases (TH / EN / shape / CTA uri); `handleCheckIn` sends Flex; line-bot tsc + vitest green | - | cc:TODO |
+
+#### Non-goals for Phase 22
+
+- No bundle audit of /workout/[id] or /sign-in (deferred — needs investigation budget)
+- No new product features
+- No schema-data changes (22.1 is additive indexes only)
+- No new orchestration infrastructure (use existing tmux multiagent)
 
 ---
 
