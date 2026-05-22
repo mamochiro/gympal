@@ -12,6 +12,65 @@ reproduced quickly next time.
 ## Index
 
 - Dynamic-import heavy charting libs off First Load JS #perf #bundle-size #recharts #next-dynamic
+- Dispatch domain-isolated tasks via tmux multiagent #orchestration #multiagent #tmux #send-task
+
+---
+
+## Dispatch domain-isolated tasks via tmux multiagent #orchestration #multiagent #tmux #send-task
+
+### Problem
+
+- A phase has 2+ tasks that each touch exactly one domain (e.g., one task in `packages/db`, another in `apps/line-bot`). Running them serially in Solo mode wastes wall time when they don't share files or types. The harness `--breezing` flag spawns ephemeral Workers, but doesn't preserve the named-agent identity that makes coordination across multi-week campaigns legible.
+
+### Solution
+
+- Use the project's `scripts/multiagent.sh` tmux setup. Each domain has a long-running Claude Code session in a named tmux window (`web-agent`, `line-bot-agent`, `db-agent`, `qa-agent`). The orchestrator session:
+  1. Writes the phase to `Plans.md` so each agent has a shared task contract.
+  2. Dispatches via `scripts/send-task.sh <agent> "<message>"` — the script handles bracketed-paste + delayed Enter for reliable delivery.
+  3. Stops; does not poll.
+  4. Receives agent replies as turn input (agents call `send-task.sh orchestrator "done[<name>]: ..."`).
+  5. Aggregates and either ships or dispatches a follow-up (e.g., `send-task.sh qa "/quality-gate"`).
+
+### Applies when
+
+- Tasks are clearly domain-isolated — different files, no shared types, no merge risk.
+- The phase has ≥2 tasks that can genuinely run in parallel.
+- You want domain-specific context to persist across multiple tasks/cycles (vs harness's ephemeral Workers, which start fresh).
+
+### Does not apply when
+
+- Tasks share files or types (use Solo or harness `--breezing` with worktrees instead).
+- A phase has only 1 task (Solo is faster — no tmux coordination overhead).
+- You can't tolerate the higher token cost of keeping 4 persistent CC sessions warm.
+
+### Example
+
+```bash
+# Orchestrator (this session)
+./scripts/send-task.sh db 'Run /harness-work 22.1 — DB migration for 3 missing indexes per Plans.md'
+./scripts/send-task.sh line-bot 'Run /harness-work 22.2 — handleCheckIn → Flex per Plans.md'
+
+# Wait — DO NOT poll. Agents will reply when done.
+
+# Verify dispatch only:
+source scripts/multiagent.sh && agent_status
+# Expect: 🌐 web IDLE | 💬 line WORKING | 🗄 db WORKING | ✅ qa IDLE
+```
+
+### Caveats
+
+- **send-task.sh path resolution from agent cwd**: agents run from their package subdir (`apps/web`, `packages/db`, …). The relative path `./scripts/send-task.sh` does NOT resolve from those directories. Two fixes work today:
+  1. Tell each agent the absolute path in the dispatch message (`/Users/.../saifit/scripts/send-task.sh`).
+  2. Have agents resolve `$REPO_ROOT/scripts/send-task.sh` themselves via `git rev-parse --show-toplevel`.
+  Observed when db-agent fell back to inline reporting instead of send-task because `./scripts/send-task.sh` returned ENOENT.
+- **Reply arrives as turn input**: agent replies via send-task land in the orchestrator's input pane and surface as the user's next-turn message. Multiple replies in flight may concatenate or arrive at slightly different times. Treat the orchestrator as the aggregator — never as a synchronous RPC.
+- **Don't poll**: the orchestrator skill is explicit about this. Use `agent_status` to verify dispatch landed, then stop. Agents finish on their own timeline.
+- **`agent_status` is best-effort**: it greps "esc to interrupt" in the pane capture, so a momentary IDLE between phases can be misread. If unsure, capture-pane on the specific window.
+
+### Related
+
+- decisions: —
+- references: Phase 22 dispatch in Plans.md; `scripts/multiagent.sh`; `scripts/send-task.sh`; orchestrator system prompt in `CLAUDE.md` (project root)
 
 ---
 
