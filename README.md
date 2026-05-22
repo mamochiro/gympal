@@ -192,6 +192,18 @@ pnpm check                           # Biome lint + format check
 pnpm build                           # Full production build
 ```
 
+### Multi-agent orchestration
+
+For phases with domain-isolated parallel work (web + line-bot + db + qa together), the repo ships a tmux-based multi-agent setup. See **[docs/multiagent-guide.md](docs/multiagent-guide.md)** for the full workflow. Quick start:
+
+```bash
+./scripts/multiagent.sh web line-bot db qa     # spawn agents in tmux
+source scripts/multiagent.sh && agent_status   # check who's idle
+./scripts/send-task.sh <agent> "<task>"        # dispatch (use absolute paths!)
+```
+
+When to reach for it: ≥2 tasks across ≥2 domains with no file overlap. For everything smaller, plain `/harness-work` is faster.
+
 ---
 
 ## Tech Stack
