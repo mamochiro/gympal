@@ -153,7 +153,10 @@ export const workouts = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow().$type<Date>(),
     updatedAt: timestamp("updated_at").notNull().defaultNow().$type<Date>(),
   },
-  (t) => [index("idx_workouts_user_started").on(t.userId, t.startedAt)],
+  (t) => [
+    index("idx_workouts_user_started").on(t.userId, t.startedAt),
+    index("idx_workouts_user_completed").on(t.userId, t.completedAt),
+  ],
 );
 
 export const workoutSets = pgTable(
@@ -179,6 +182,7 @@ export const workoutSets = pgTable(
   },
   (t) => [
     index("idx_workout_sets_workout_id").on(t.workoutId),
+    index("idx_workout_sets_workout_exercise").on(t.workoutId, t.exerciseId),
     uniqueIndex("idx_workout_sets_client_set_id").on(t.workoutId, t.clientSetId),
   ],
 );
@@ -198,7 +202,10 @@ export const personalRecords = pgTable(
     achievedAt: timestamp("achieved_at").notNull().$type<Date>(),
     workoutSetId: uuid("workout_set_id").references(() => workoutSets.id),
   },
-  (t) => [index("idx_prs_user_exercise").on(t.userId, t.exerciseId)],
+  (t) => [
+    index("idx_prs_user_exercise").on(t.userId, t.exerciseId),
+    index("idx_prs_workout_set_id").on(t.workoutSetId),
+  ],
 );
 
 export const streaks = pgTable("streaks", {
