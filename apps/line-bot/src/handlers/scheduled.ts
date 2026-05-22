@@ -8,6 +8,7 @@ import {
 } from "../../../../packages/db/src/helpers";
 import { reminderLog, users, workoutSets, workouts } from "../../../../packages/db/src/schema";
 import { getDb } from "../lib/db";
+import { buildCheckInFlex } from "../lib/flex-checkin";
 import { buildDailyReminderFlex } from "../lib/flex-daily-reminder";
 import { buildStreakWarningFlex } from "../lib/flex-streak-warning";
 import { buildWeeklySummaryFlex } from "../lib/flex-weekly-summary";
@@ -62,16 +63,14 @@ async function handleCheckIn(env: Env): Promise<void> {
   for (const user of missedUsers) {
     if (!user.lineUserId) continue;
 
-    const text =
-      user.locale === "en"
-        ? `No workout logged today. Even one set counts! 🏋️ ${env.WEB_APP_URL}`
-        : `วันนี้ยังไม่ได้ออกกำลังกายใช่ไหม? บันทึกสักเซ็ตก็ยังดี 🏋️ ${env.WEB_APP_URL}`;
+    const locale = user.locale === "en" ? "en" : "th";
+    const flex = buildCheckInFlex(locale, env.WEB_APP_URL);
 
     let success = true;
     try {
       await client.pushMessage({
         to: user.lineUserId,
-        messages: [{ type: "text", text }],
+        messages: [flex],
       });
     } catch (err) {
       success = false;
