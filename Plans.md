@@ -18,8 +18,8 @@ Direct payoff from Phase-22-precursor audit dispatched via tmux multiagent: 3 mi
 
 | Task | Description | DoD | Depends | Status |
 |------|-------------|-----|---------|--------|
-| 22.1 | Add 3 missing indexes via a new Drizzle migration: (a) `workouts(user_id, completed_at)` for 18.4 repeat-last-workout query; (b) `personal_records(workout_set_id)` for 20.1 `prsAchieved` lookup; (c) `workout_sets(workout_id, exercise_id)` for 15.2 last-sets query. Run `drizzle-kit generate` to produce the migration SQL. [tdd:skip:additive-index-only-no-behavior-change] | New migration file in `packages/db/drizzle/`; `pnpm --filter @saifit/db typecheck` green; existing 5 db vitest cases still pass; no schema-data change | - | cc:TODO |
-| 22.2 | Migrate `handleCheckIn` in `apps/line-bot/src/handlers/scheduled.ts` from plain-text push to Flex Message. Create `apps/line-bot/src/lib/flex-checkin.ts` exporting `buildCheckInFlex(locale, webAppUrl)` mirroring 21.1's shape (kicker / title / body / CTA). [tdd:required] | New builder; ≥4 vitest cases (TH / EN / shape / CTA uri); `handleCheckIn` sends Flex; line-bot tsc + vitest green | - | cc:完了 |
+| 22.1 | Add 3 missing indexes via a new Drizzle migration: (a) `workouts(user_id, completed_at)` for 18.4 repeat-last-workout query; (b) `personal_records(workout_set_id)` for 20.1 `prsAchieved` lookup; (c) `workout_sets(workout_id, exercise_id)` for 15.2 last-sets query. [tdd:skip:additive-index-only-no-behavior-change] | Migration `0008_calm_steel_serpent.sql` added; tsc + 5/5 vitest green; no schema-data change. Dispatched to db-agent via tmux multiagent. | - | cc:完了 [d0bdd93] |
+| 22.2 | Migrate `handleCheckIn` in `apps/line-bot/src/handlers/scheduled.ts` from plain-text push to Flex Message. Create `apps/line-bot/src/lib/flex-checkin.ts` exporting `buildCheckInFlex(locale, webAppUrl)` mirroring 21.1's shape. [tdd:required] | `buildCheckInFlex` with 5 vitest cases (shape / TH / EN / CTA uri / altText); `handleCheckIn` sends Flex; line-bot 30/30 tests + tsc + biome green. Dispatched to line-bot-agent via tmux multiagent. | - | cc:完了 [62d4577] |
 
 #### Non-goals for Phase 22
 
@@ -71,6 +71,8 @@ Active phases (15–21) live above with one-line summaries. Move them here once 
 ## Open caveats (not blocking)
 
 - Browser smoke test still pending for: 16.4 / 16.5 / 17.2 / 18.4 / 20.1 (UI changes verified by tsc + biome + vitest only).
-- LINE Flex bubbles from 19.1 / 21.1 / 21.2 haven't been seen on a real LINE app yet — schema-valid is necessary but not sufficient.
+- LINE Flex bubbles from 19.1 / 21.1 / 21.2 / 22.2 haven't been seen on a real LINE app yet — schema-valid is necessary but not sufficient.
 - Cross-driver integration test against real Neon endpoint deferred to CI infra task.
 - 18.3 (progression nudge) deferred pending telemetry; revisit conditions in `memory/decisions.md`.
+- 22 indexes need `pnpm drizzle:migrate` (or equivalent) to apply on dev DB + prod. Migration sits in `packages/db/drizzle/` — applying is a deploy concern, not a code concern.
+- `apps/web/public/sw.js` (built service-worker artifact) has 206 pre-existing biome errors — qa flagged this during 22 gate. Recommendation: add `apps/web/public/sw*.js` to `biome.json` ignore. Not blocking Phase 22 close.
